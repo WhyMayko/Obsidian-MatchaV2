@@ -8,7 +8,13 @@ end
 assert(type(Library) == "table", "Example.lua failed to load Library.lua!")
 
 local function loadAddon(path)
-    return assert(loadstring(game:HttpGet(repo .. path)))()
+    local chunk = assert(loadstring(game:HttpGet(repo .. path)))
+    local addon = chunk()
+    if type(addon) ~= "table" then
+        addon = _G.Galax and _G.Galax[path]
+    end
+    assert(type(addon) == "table", "Example.lua failed to load " .. path .. "!")
+    return addon
 end
 
 local ThemeManager = loadAddon("addons/ThemeManager.lua")
