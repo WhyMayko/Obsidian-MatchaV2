@@ -32,6 +32,44 @@ local Window = Library:CreateWindow({
     ShowSearch = true,
 })
 
+local startupLoading = Library:CreateLoading({
+    Title = "mspaint",
+    Icon = 95816097006870,
+    Message = "Loading...",
+    Description = "Preparing interface...",
+    CurrentStep = 0,
+    TotalSteps = 4,
+    ShowSidebar = true,
+    WindowWidth = 450,
+    WindowHeight = 275,
+    ContentWidth = 450,
+    SidebarWidth = 250,
+})
+
+startupLoading.Sidebar:AddLabel("Obsidian Matcha")
+startupLoading.Sidebar:AddDivider()
+startupLoading.Sidebar:AddValue("Version: v2")
+startupLoading.Sidebar:AddValue("User: " .. tostring(game:GetService("Players").LocalPlayer.Name))
+startupLoading:SetErrorButtons({
+    Retry = {
+        Title = "Retry",
+        Variant = "Primary",
+        Order = 1,
+        Callback = function(loading)
+            loading:ShowErrorPage(false)
+            loading:ShowSidebarPage(true)
+        end,
+    },
+    Close = {
+        Title = "Close",
+        Variant = "Secondary",
+        Order = 2,
+        Callback = function(loading)
+            loading:Destroy()
+        end,
+    },
+})
+
 local Tabs = {
     Main = Window:AddTab("Main", "user"),
     Key = Window:AddKeyTab("Key System"),
@@ -439,13 +477,6 @@ local performanceConnection = game:GetService("RunService").RenderStepped:Connec
         lastPerformanceUpdate = now
     end
 end)
-
-local startupLoading = Library:CreateLoading({
-    Message = "Obsidian Matcha",
-    Description = "Preparing interface...",
-    CurrentStep = 0,
-    TotalSteps = 4,
-})
 
 task.spawn(function()
     local steps = {

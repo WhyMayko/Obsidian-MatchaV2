@@ -1,4 +1,5 @@
 local GalaxObsidian = {}
+GalaxObsidian.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 local drawingMeta = setmetatable({}, { __mode = "k" })
 
 -- Bootstrap
@@ -1750,6 +1751,7 @@ function GalaxObsidian:CreateWindow(options)
         end)
         return nil
     end
+    Window._requestImage = RequestImage
     if Window.ImagesEnabled and Window.IconUrl and not Window.IconReady then
         RequestImage(Window.IconUrl, function(data)
             Window.IconData = data
@@ -4935,27 +4937,108 @@ function GalaxObsidian:CreateWindow(options)
         local camera = workspace.CurrentCamera
         local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
         local scale = self:GetScale()
-        local width = math.floor((loading.width or 460) * scale)
-        local height = math.floor((loading.height or 190) * scale)
+        local contentWidth = loading.contentWidth or loading.width or 450
+        local sidebarWidth = loading.showSidebar and (loading.sidebarWidth or 250) or 0
+        local targetWidth = (contentWidth + sidebarWidth) * scale
+        local width = math.floor(self:_anim(loading, "width", targetWidth, 12))
+        local height = math.floor((loading.height or 275) * scale)
         local x = math.floor((viewport.X - width) / 2)
         local y = math.floor((viewport.Y - height) / 2)
         local z = 180
         self:_square(0, 0, viewport.X, viewport.Y, Color3.new(0, 0, 0), true, 0.6, 0, z)
         self:_square(x, y, width, height, Theme.Background, true, 1, 8, z + 1)
         self:_square(x, y, width, height, Theme.Outline, false, 1, 8, z + 2)
-        local pad = math.floor(18 * scale)
-        self:_text(fitTextToWidth(loading.message, width - pad * 2, 20, Theme.Font), x + pad, y + pad, Theme.Text, 20, Drawing.Fonts.Monospace, false, true, z + 3)
-        self:_text(fitTextToWidth(loading.description, width - pad * 2, 14, Theme.Font), x + pad, y + math.floor(55 * scale), Theme.Muted, 14, Drawing.Fonts.Monospace, false, true, z + 3)
+        local mainWidth = math.min(width, math.floor(contentWidth * scale))
+        local topHeight = math.floor(48 * scale)
+        self:_line(x, y + topHeight, x + mainWidth, y + topHeight, Theme.Outline, 1, z + 3)
+        local titleX = x + math.floor(12 * scale)
+        local titleIconSize = math.floor(28 * scale)
+        if loading.iconData then
+            self:_image(loading.iconData, titleX, y + math.floor(10 * scale), titleIconSize, titleIconSize, 4, z + 4, 0.8)
+            titleX = titleX + titleIconSize + math.floor(7 * scale)
+        elseif self.IconData then
+            self:_image(self.IconData, titleX, y + math.floor(10 * scale), titleIconSize, titleIconSize, 4, z + 4, 0.8)
+            titleX = titleX + titleIconSize + math.floor(7 * scale)
+        end
+        self:_text(fitTextToWidth(loading.title, mainWidth - titleX + x - 12, 20, Theme.Font), titleX, y + math.floor(14 * scale) - _yOfs(scale), Theme.Text, 20, Drawing.Fonts.Monospace, false, true, z + 4)
+
+        if loading.showSidebar and width > mainWidth + math.floor(20 * scale) then
+            local sidebarX = x + mainWidth
+            self:_line(sidebarX, y, sidebarX, y + height, Theme.Outline, 1, z + 3)
+            local itemY = y + math.floor(15 * scale)
+            for _, item in ipairs(loading.sidebarItems) do
+                if item.visible ~= false then
+                    if item.kind == "divider" then
+                        self:_line(sidebarX + 12, itemY, x + width - 12, itemY, Theme.Outline, 1, z + 4)
+                        itemY = itemY + math.floor(12 * scale)
+                    else
+                        local rowHeight = math.floor(27 * scale)
+                        local hovered = item.kind == "button" and self:_over(sidebarX + 10, itemY, width - mainWidth - 20, rowHeight)
+                        if hovered then self:_square(sidebarX + 10, itemY, width - mainWidth - 20, rowHeight, Theme.PopupHover, true, 1, 4, z + 3) end
+                        self:_text(fitTextToWidth(item.text, width - mainWidth - math.floor(28 * scale), 14, Theme.Font), sidebarX + math.floor(14 * scale), itemY + math.floor(6 * scale) - _yOfs(scale), item.kind == "value" and Theme.Muted or Theme.Text, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+                        if hovered and self:_click(sidebarX + 10, itemY, width - mainWidth - 20, rowHeight, item) and type(item.callback) == "function" then pcall(item.callback, loading, item) end
+                        itemY = itemY + rowHeight + math.floor(4 * scale)
+                    end
+                end
+            end
+        end
+
+        if loading.isError then
+            local pad = math.floor(15 * scale)
+            self:_text("Error", x + pad, y + topHeight + pad, Theme.Red, 18, Drawing.Fonts.Monospace, false, true, z + 4)
+            local errorLines = wrapTextLines(loading.errorMessage or "Unknown error", mainWidth - pad * 2, 14, 8, Theme.Font)
+            for index, line in ipairs(errorLines) do
+                self:_text(line, x + pad, y + topHeight + math.floor(43 * scale) + (index - 1) * math.floor(17 * scale), Theme.Muted, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+            end
+            local buttons = loading.errorButtons or {}
+            local buttonHeight = math.floor(27 * scale)
+            local gap = math.floor(8 * scale)
+            local totalWidth = 0
+            local widths = {}
+            for index, button in ipairs(buttons) do
+                widths[index] = math.max(math.floor(64 * scale), estimateTextWidth(button.title, 14, Theme.Font) + math.floor(30 * scale))
+                totalWidth = totalWidth + widths[index] + (index > 1 and gap or 0)
+            end
+            local buttonX = x + mainWidth - pad - totalWidth
+            local buttonY = y + height - math.floor(42 * scale)
+            if #buttons > 0 then self:_line(x + pad, buttonY - math.floor(7 * scale), x + mainWidth - pad, buttonY - math.floor(7 * scale), Theme.Outline, 1, z + 4) end
+            for index, button in ipairs(buttons) do
+                local buttonWidth = widths[index]
+                local hovered = self:_over(buttonX, buttonY, buttonWidth, buttonHeight)
+                local color = button.variant == "Destructive" and Theme.Red or (button.variant == "Primary" and Theme.Text or Theme.Surface)
+                if hovered then color = button.variant == "Destructive" and Color3.fromRGB(235, 70, 85) or Theme.Surface2 end
+                self:_square(buttonX, buttonY, buttonWidth, buttonHeight, color, true, 1, 5, z + 4)
+                self:_square(buttonX, buttonY, buttonWidth, buttonHeight, Theme.Outline, false, 1, 5, z + 5)
+                local textColor = button.variant == "Primary" and Theme.Background or Theme.Text
+                self:_text(button.title, buttonX + buttonWidth / 2, buttonY + math.floor(6 * scale) - _yOfs(scale), textColor, 14, Drawing.Fonts.Monospace, true, true, z + 6)
+                if hovered and self:_click(buttonX, buttonY, buttonWidth, buttonHeight, button) and type(button.callback) == "function" then pcall(button.callback, loading) end
+                buttonX = buttonX + buttonWidth + gap
+            end
+            return nil
+        end
+
+        local centerX = x + mainWidth / 2
+        local tweenTime = loading.loadingIconTweenTime or 1
+        local pulse = tweenTime > 0 and (0.75 + math.abs(((tick() / tweenTime) % 1) - 0.5) * 0.4) or 0.8
+        local loadingIconSize = math.floor((58 + pulse * 4) * scale)
+        if loading.loadingIconData then
+            local iconDrawing = self:_image(loading.loadingIconData, centerX - loadingIconSize / 2, y + topHeight + math.floor(25 * scale), loadingIconSize, loadingIconSize, 0, z + 4, pulse)
+            if iconDrawing and loading.loadingIconColor then iconDrawing.Color = loading.loadingIconColor end
+        else
+            self:_drawIcon(loading.loadingIcon or "loader-circle", centerX, y + topHeight + math.floor(56 * scale), loadingIconSize, true, z + 4)
+        end
+        self:_text(fitTextToWidth(loading.message, mainWidth - 50, 18, Theme.Font), centerX, y + topHeight + math.floor(103 * scale) - _yOfs(scale), Theme.Text, 18, Drawing.Fonts.Monospace, true, true, z + 4)
+        self:_text(fitTextToWidth(loading.description, mainWidth - 50, 14, Theme.Font), centerX, y + topHeight + math.floor(130 * scale) - _yOfs(scale), Theme.Muted, 14, Drawing.Fonts.Monospace, true, true, z + 4)
         local total = math.max(1, tonumber(loading.totalSteps) or 1)
         local current = clamp(tonumber(loading.currentStep) or 0, 0, total)
-        local barX = x + pad
-        local barY = y + height - math.floor(54 * scale)
-        local barW = width - pad * 2
-        local barH = math.floor(12 * scale)
+        local barW = math.floor(mainWidth * 0.7)
+        local barX = x + math.floor((mainWidth - barW) / 2)
+        local barY = y + height - math.floor(48 * scale)
+        local barH = math.floor(15 * scale)
         self:_square(barX, barY, barW, barH, Theme.Main, true, 1, 4, z + 3)
-        self:_square(barX, barY, math.floor(barW * current / total), barH, loading.errorMessage and Color3.fromRGB(210, 50, 65) or Theme.Accent, true, 1, 4, z + 4)
-        local status = loading.errorMessage or (tostring(current) .. "/" .. tostring(total))
-        self:_text(status, x + width / 2, barY + math.floor(20 * scale), loading.errorMessage and Color3.fromRGB(255, 110, 120) or Theme.Muted, 14, Drawing.Fonts.Monospace, true, true, z + 4)
+        local progress = self:_anim(loading, "progress", current / total, 10)
+        self:_square(barX, barY, math.floor(barW * progress), barH, Theme.Accent, true, 1, 4, z + 4)
+        self:_text(tostring(current) .. "/" .. tostring(total), centerX, barY + math.floor(1 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, true, true, z + 5)
     end
 
     function Window:_renderTooltip()
@@ -6567,27 +6650,93 @@ function GalaxObsidian:CreateLoading(options)
     options = options or {}
     local window = self.ActiveWindow
     assert(window, "CreateLoading requires an active window!")
+    if self.ActiveLoading and not self.ActiveLoading.closed then return self.ActiveLoading end
     local loading = {
-        message = tostring(options.Message or options.Title or "Loading"),
+        title = tostring(options.Title or window.Title or "mspaint"),
+        message = tostring(options.Message or "Loading..."),
         description = tostring(options.Description or "Please wait..."),
         currentStep = tonumber(options.CurrentStep) or 0,
         totalSteps = math.max(1, tonumber(options.TotalSteps) or 1),
-        width = tonumber(options.Width) or 460,
-        height = tonumber(options.Height) or 190,
+        width = tonumber(options.WindowWidth or options.Width) or 450,
+        height = tonumber(options.WindowHeight or options.Height) or 275,
+        contentWidth = tonumber(options.ContentWidth) or 450,
+        sidebarWidth = tonumber(options.SidebarWidth) or 250,
+        showSidebar = options.ShowSidebar == true,
+        loadingIcon = options.LoadingIcon or "loader-circle",
+        loadingIconColor = options.LoadingIconColor,
+        loadingIconTweenTime = tonumber(options.LoadingIconTweenTime) or 1,
+        sidebarItems = {},
+        errorButtons = {},
+        isError = false,
         closed = false,
+        previousOpen = window.Open,
     }
+    local sidebar = {}
+    loading.Sidebar = sidebar
+    local function addSidebarItem(kind, value, callback)
+        local info = type(value) == "table" and value or { Text = value, Callback = callback }
+        local item = { kind = kind, text = tostring(info.Text or info.Title or ""), callback = info.Callback or info.Func, visible = info.Visible ~= false }
+        loading.sidebarItems[#loading.sidebarItems + 1] = item
+        function item:SetText(text) self.text = tostring(text or "") end
+        function item:SetVisible(state) self.visible = state == true end
+        function item:Destroy() self.visible = false; self.destroyed = true end
+        return item
+    end
+    function sidebar:AddLabel(value) return addSidebarItem("label", value) end
+    function sidebar:AddValue(value) return addSidebarItem("value", value) end
+    function sidebar:AddButton(value, callback) return addSidebarItem("button", value, callback) end
+    function sidebar:AddDivider() return addSidebarItem("divider", "") end
     function loading:SetMessage(value) self.message = tostring(value or "") end
     function loading:SetDescription(value) self.description = tostring(value or "") end
-    function loading:SetCurrentStep(value) self.currentStep = tonumber(value) or self.currentStep end
+    function loading:SetCurrentStep(value) self.currentStep = clamp(tonumber(value) or self.currentStep, 0, self.totalSteps) end
     function loading:SetTotalSteps(value) self.totalSteps = math.max(1, tonumber(value) or self.totalSteps) end
     function loading:SetWindowWidth(value) self.width = math.max(280, tonumber(value) or self.width) end
     function loading:SetWindowHeight(value) self.height = math.max(140, tonumber(value) or self.height) end
+    function loading:SetContentWidth(value) self.contentWidth = math.max(280, tonumber(value) or self.contentWidth) end
+    function loading:SetSidebarWidth(value) self.sidebarWidth = math.max(140, tonumber(value) or self.sidebarWidth) end
+    function loading:SetLoadingIcon(value)
+        self.loadingIcon = tostring(value or "loader-circle")
+        self.loadingIconData = nil
+        local resolved = imageUrl(value)
+        if resolved then window:_requestImage(resolved, function(data) self.loadingIconData = data end) end
+    end
+    function loading:SetLoadingIconTweenTime(value) self.loadingIconTweenTime = math.max(0, tonumber(value) or self.loadingIconTweenTime) end
+    function loading:SetLoadingIconColor(value) self.loadingIconColor = value end
     function loading:SetErrorMessage(value) self.errorMessage = tostring(value or "") end
-    function loading:ShowErrorPage(value) self.errorMessage = tostring(value or self.errorMessage or "Unknown error") end
-    function loading:ShowSidebarPage() self.errorMessage = nil end
-    function loading:Continue() self.errorMessage = nil end
-    function loading:Destroy() self.closed = true; if window.LoadingOverlay == self then window.LoadingOverlay = nil end end
+    function loading:SetErrorButtons(buttons)
+        assert(type(buttons) == "table", "Loading error buttons must be a table!")
+        self.errorButtons = {}
+        for id, info in pairs(buttons) do
+            info = type(info) == "table" and info or { Title = tostring(info) }
+            self.errorButtons[#self.errorButtons + 1] = {
+                id = tostring(id), title = tostring(info.Title or info.Text or id),
+                variant = info.Variant or "Secondary", callback = info.Callback or info.Func,
+                order = tonumber(info.Order) or (#self.errorButtons + 1),
+            }
+        end
+        table.sort(self.errorButtons, function(left, right) return left.order < right.order end)
+    end
+    function loading:ShowErrorPage(state) self.isError = state ~= false; if self.isError then self.showSidebar = false end end
+    function loading:ShowSidebarPage(state) self.showSidebar = state ~= false; if self.showSidebar then self.isError = false end end
+    function loading:Destroy()
+        if self.closed then return nil end
+        self.closed = true
+        window.LoadingOverlay = nil
+        GalaxObsidian.ActiveLoading = nil
+        window:_setOpen(self.previousOpen ~= false)
+    end
+    loading.Continue = loading.Destroy
+    window:_setOpen(false)
     window.LoadingOverlay = loading
+    self.ActiveLoading = loading
+    local titleIcon = imageUrl(options.Icon)
+    if titleIcon then window:_requestImage(titleIcon, function(data) loading.iconData = data end) end
+    local loadingIcon = imageUrl(options.LoadingIcon)
+    if loadingIcon then
+        window:_requestImage(loadingIcon, function(data) loading.loadingIconData = data end)
+    else
+        window:_requestImage(GalaxObsidian.Repo .. "assets/LoadingIcon.png", function(data) loading.loadingIconData = data end)
+    end
     return loading
 end
 
