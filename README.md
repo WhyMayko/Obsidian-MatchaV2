@@ -106,6 +106,21 @@ Group:AddSlider("Speed", {
 })
 ```
 
+Divider and compact slider:
+
+```lua
+Group:AddDivider({ Text = "Movement", MarginTop = 8, MarginBottom = 8 })
+
+Group:AddSlider("Speed", {
+    Text = "Speed",
+    Default = 16,
+    Min = 0,
+    Max = 250,
+    Compact = true,
+    AllowRightClickInput = true,
+})
+```
+
 Dropdown:
 
 ```lua

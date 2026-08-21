@@ -880,7 +880,10 @@ local function makeHandle(widget)
             widget.value = value == true
             _fire(widget, widget.value)
         elseif widget.type == "slider" then
-            local v = clamp(value, widget.min, widget.max)
+            local v = tonumber(value)
+            assert(v, "Slider value must be a number!")
+            v = clamp(v, widget.min, widget.max)
+            if widget.rounding ~= false then v = roundNumber(v, widget.rounding) end
             widget.value = v
             _fire(widget, widget.value)
         elseif widget.type == "dropdown" then
@@ -946,6 +949,14 @@ local function makeHandle(widget)
     function handle:SetVisible(visible)
         widget.visible = visible == true
     end
+    function handle:Destroy()
+        widget.destroyed = true
+        widget.visible = false
+        if widget.id then
+            GalaxObsidian.Options[widget.id] = nil
+            GalaxObsidian.Toggles[widget.id] = nil
+        end
+    end
     function handle:SetDisabled(disabled)
         widget.disabled = disabled == true
     end
@@ -964,12 +975,18 @@ local function makeHandle(widget)
 
     function handle:SetMin(value)
         if widget.type == "slider" then
+            value = tonumber(value)
+            assert(value and value < widget.max, "Slider minimum must be lower than maximum!")
             widget.min = value
+            if widget.value < value then handle:Set(value) end
         end
     end
     function handle:SetMax(value)
         if widget.type == "slider" then
+            value = tonumber(value)
+            assert(value and value > widget.min, "Slider maximum must be greater than minimum!")
             widget.max = value
+            if widget.value > value then handle:Set(value) end
         end
     end
     function handle:SetPrefix(value)
@@ -981,6 +998,12 @@ local function makeHandle(widget)
         if widget.type == "slider" then
             widget.suffix = tostring(value or "")
         end
+    end
+    function handle:SetCompact(value)
+        if widget.type == "slider" then widget.compact = value == true end
+    end
+    function handle:SetHideMax(value)
+        if widget.type == "slider" then widget.hideMax = value == true end
     end
     function handle:Refresh(newOptions, newDefault)
         if widget.type == "dropdown" or widget.type == "multidropdown" then
@@ -2958,7 +2981,7 @@ function GalaxObsidian:CreateWindow(options)
         local scale = self:GetScale()
         local base = 30
         if widget.type == "divider" then
-            base = 13
+            base = 6 + (widget.marginTop or 0) + (widget.marginBottom or 0)
         elseif widget.type == "colorpicker" then
             base = 26
         elseif widget.type == "colorpair" then
@@ -3206,20 +3229,19 @@ function GalaxObsidian:CreateWindow(options)
                 maxText = ""
             end
         end
-        local hasAffix = tostring(widget.prefix or "") ~= "" or tostring(widget.suffix or "") ~= ""
-        local valueText = ""
-        if hasAffix then
-            valueText = tostring(widget.prefix or "")
-            if currentText ~= "" then
-                valueText = valueText .. currentText
-            end
-            if widget.suffix then
-                valueText = valueText .. tostring(widget.suffix)
-            end
-        elseif widget.hideMax then
+        local prefix = tostring(widget.prefix or "")
+        local suffix = tostring(widget.suffix or "")
+        local currentDisplay = prefix .. currentText .. suffix
+        local maxDisplay = prefix .. maxText .. suffix
+        local valueText
+        if widget.formatDisplayValue and maxText == "" then
             valueText = currentText
+        elseif compact then
+            valueText = tostring(widget.label or "Slider") .. ": " .. currentDisplay
+        elseif widget.hideMax then
+            valueText = currentDisplay
         else
-            valueText = currentText .. "/" .. maxText
+            valueText = currentDisplay .. "/" .. maxDisplay
         end
         local scale = self:GetScale()
         if not compact then
@@ -3264,17 +3286,31 @@ function GalaxObsidian:CreateWindow(options)
         local centeredValueW = estimateTextWidth(valueText, 14, Theme.Font)
         local scaledValTextSize = math.floor(14 * scale + 0.5)
         local sliderValueText = self:_anim(widget, "slider.value.text", disabled and Theme.DimText or Theme.Text, 16)
-        self:_text(
-            valueText,
-            barX + math.floor((barW - centeredValueW) / 2),
-            barY + math.floor((barH - scaledValTextSize) / 2),
-            sliderValueText,
-            14,
-            Drawing.Fonts.Monospace,
-            false,
-            true,
-            z + 4
-        )
+        local sliderInput = widget._input
+        local inputFocused = sliderInput and self.TextTarget == sliderInput
+        if inputFocused then
+            sliderInput.hitbox = { x = barX, y = barY, w = barW, h = barH }
+            self:_renderTextInputValue(sliderInput.value, "", barX + math.floor(6 * scale), barY + math.floor((barH - scaledValTextSize) / 2), barW - math.floor(12 * scale), 14, true, false, z + 4, true, "center")
+        else
+            self:_text(valueText, barX + math.floor((barW - centeredValueW) / 2), barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+        end
+        if not disabled and widget.allowRightClickInput and self.Mouse2Clicked and self:_over(barX, barY, barW, barH) then
+            local input = widget._input or { type = "sliderinput", numeric = true, finished = true }
+            input.value = formatNumber(widget.value, widget.rounding)
+            input.callback = function(value)
+                local numeric = tonumber(value)
+                if numeric then
+                    numeric = clamp(numeric, widget.min, widget.max)
+                    if widget.rounding ~= false then numeric = roundNumber(numeric, widget.rounding) end
+                    if widget.value ~= numeric then widget.value = numeric; _fire(widget, widget.value) end
+                end
+            end
+            widget._input = input
+            self.TextTarget = input
+            self:_closeFloating("textbox")
+            self:_claimInteraction(input)
+            self.Mouse2Clicked = false
+        end
         if not disabled and self:_click(barX, barY - math.floor(4 * scale), barW, barH + math.floor(8 * scale)) then
             self.SliderTarget = widget
             self:_claimInteraction(widget)
@@ -3778,7 +3814,25 @@ function GalaxObsidian:CreateWindow(options)
         end
         if widget.type == "divider" then
             local scale = self:GetScale()
-            self:_line(x, y + math.floor(6 * scale), x + w, y + math.floor(6 * scale), Theme.Outline, 1, z + 2)
+            local marginTop = math.floor((widget.marginTop or 0) * scale)
+            local lineHeight = math.max(2, math.floor(2 * scale))
+            local lineY = y + marginTop + math.floor(2 * scale)
+            local text = widget.text
+            local function drawDividerLine(lineX, lineWidth)
+                if lineWidth <= 0 then return nil end
+                self:_square(lineX, lineY, lineWidth, lineHeight, Theme.Main, true, 1, 0, z + 1)
+                self:_square(lineX, lineY, lineWidth, lineHeight, Theme.Outline, false, 1, 0, z + 2)
+            end
+            if text and text ~= "" then
+                local textWidth = estimateTextWidth(text, 14, Theme.Font)
+                local halfGap = math.floor(textWidth / 2 + 10 * scale)
+                local centerX = x + w / 2
+                drawDividerLine(x, centerX - halfGap - x)
+                drawDividerLine(centerX + halfGap, x + w - centerX - halfGap)
+                self:_text(text, centerX, lineY - math.floor(6 * scale) - _yOfs(scale), Theme.Muted, 14, Drawing.Fonts.Monospace, true, true, z + 3)
+            else
+                drawDividerLine(x, w)
+            end
         elseif widget.type == "colorpicker" then
             self:_renderColorPicker(widget, x, y, w, z)
         elseif widget.type == "colorpair" then
@@ -6134,6 +6188,8 @@ function GalaxObsidian:CreateWindow(options)
                     callback = config.Callback or callback,
                     changed = config.Changed,
                     tooltip = config.Tooltip,
+                    disabledTooltip = config.DisabledTooltip,
+                    allowRightClickInput = config.AllowRightClickInput == true,
                     disabled = config.Disabled == true,
                     visible = config.Visible ~= false,
                 })
@@ -6512,8 +6568,16 @@ function GalaxObsidian:CreateWindow(options)
 
             Section.AddInput = Section.AddTextbox
             Section.AddKeyPicker = Section.AddKeybind
-            Section.AddDivider = function()
-                return Window:_widgetHandle(register({ type = "divider", visible = true }))
+            Section.AddDivider = function(_, value)
+                local info = type(value) == "table" and value or { Text = type(value) == "string" and value or nil }
+                local margin = tonumber(info.Margin) or 0
+                return Window:_widgetHandle(register({
+                    type = "divider",
+                    text = info.Text and tostring(info.Text) or nil,
+                    marginTop = tonumber(info.MarginTop) or margin,
+                    marginBottom = tonumber(info.MarginBottom) or margin,
+                    visible = info.Visible ~= false,
+                }))
             end
             local function dependencyBox()
                 local box = { dependencies = {} }

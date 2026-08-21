@@ -164,7 +164,11 @@ MainLeft:AddLabel("SecondTestLabel", {
     DoesWrap = false,
 })
 
-MainLeft:AddDivider()
+MainLeft:AddDivider({
+    Text = "Sliders",
+    MarginTop = 6,
+    MarginBottom = 6,
+})
 
 MainLeft:AddSlider("MySlider", {
     Text = "This is my slider!",
@@ -187,6 +191,18 @@ Options.MySlider:OnChanged(function()
 end)
 
 Options.MySlider:SetValue(3)
+
+MainLeft:AddSlider("CompactSlider", {
+    Text = "Compact view",
+    Default = 16,
+    Min = 0,
+    Max = 250,
+    Rounding = 0,
+    Prefix = "",
+    Suffix = "",
+    Compact = true,
+    AllowRightClickInput = true,
+})
 
 MainLeft:AddSlider("MySlider2", {
     Text = "This is my custom display slider!",
