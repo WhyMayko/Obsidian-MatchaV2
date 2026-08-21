@@ -419,12 +419,51 @@ end, false, "panel-left")
 
 local StatsMenu, StatsContainer = Library:AddDraggableMenu("Stats")
 StatsContainer:AddLabel("Drawing overlay")
+local performanceValue = StatsContainer:AddValue("0 fps | 0 ms")
 StatsContainer:AddValue("Lucide: lazy")
 StatsContainer:AddButton("Close", function()
     StatsMenu:SetVisible(false)
 end)
 
+local frameCount = 0
+local lastPerformanceUpdate = tick()
+local performanceConnection = game:GetService("RunService").RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local now = tick()
+    local elapsed = now - lastPerformanceUpdate
+    if elapsed >= 1 then
+        local fps = math.floor(frameCount / elapsed + 0.5)
+        local ping = math.floor(GetPingValue() + 0.5)
+        performanceValue:SetText(tostring(fps) .. " fps | " .. tostring(ping) .. " ms")
+        frameCount = 0
+        lastPerformanceUpdate = now
+    end
+end)
+
+local startupLoading = Library:CreateLoading({
+    Message = "Obsidian Matcha",
+    Description = "Preparing interface...",
+    CurrentStep = 0,
+    TotalSteps = 4,
+})
+
+task.spawn(function()
+    local steps = {
+        "Loading configuration...",
+        "Loading Lucide icons...",
+        "Preparing Drawing overlays...",
+        "Ready!",
+    }
+    for step, description in ipairs(steps) do
+        startupLoading:SetDescription(description)
+        startupLoading:SetCurrentStep(step)
+        task.wait(0.45)
+    end
+    startupLoading:Destroy()
+end)
+
 Library:OnUnload(function()
+    performanceConnection:Disconnect()
     print("Unloaded")
 end)
 
