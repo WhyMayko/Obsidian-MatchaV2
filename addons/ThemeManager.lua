@@ -183,6 +183,14 @@ function ThemeManager:SetLibrary(library)
 	self.Library = library
 end
 
+function ThemeManager:SetFolder(folder)
+	folder = tostring(folder or ""):gsub("\\", "/"):gsub("/+$", "")
+	assert(folder ~= "", "ThemeManager folder is required!")
+	SettingsFolder = folder
+	ThemeFolder = SettingsFolder .. "/Themes"
+	DefaultThemeFile = SettingsFolder .. "/DefaultTheme.txt"
+end
+
 function ThemeManager:ThemeUpdate()
 	local Library = self.Library
 	if not Library then

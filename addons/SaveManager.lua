@@ -9,6 +9,7 @@ local SaveManager = {
 local SettingsFolder = "Galax/Obsidian/Settings"
 local ConfigFolder = SettingsFolder .. "/Configs"
 local DefaultConfigFile = SettingsFolder .. "/DefaultConfig.txt"
+local SubFolder
 
 local HttpService = game:GetService("HttpService")
 
@@ -71,6 +72,23 @@ end
 function SaveManager:SetLibrary(library)
 	self.Library = library
 	self:IgnoreThemeSettings()
+end
+
+function SaveManager:SetFolder(folder)
+	folder = tostring(folder or ""):gsub("\\", "/"):gsub("/+$", "")
+	assert(folder ~= "", "SaveManager folder is required!")
+	SettingsFolder = folder
+	local root = SubFolder and (SettingsFolder .. "/" .. SubFolder) or SettingsFolder
+	ConfigFolder = root .. "/Configs"
+	DefaultConfigFile = root .. "/DefaultConfig.txt"
+end
+
+function SaveManager:SetSubFolder(folder)
+	folder = tostring(folder or ""):gsub("\\", "/"):gsub("^/+", ""):gsub("/+$", "")
+	SubFolder = folder ~= "" and folder or nil
+	local root = SubFolder and (SettingsFolder .. "/" .. SubFolder) or SettingsFolder
+	ConfigFolder = root .. "/Configs"
+	DefaultConfigFile = root .. "/DefaultConfig.txt"
 end
 
 function SaveManager:SetIgnoreIndexes(indexes)

@@ -353,6 +353,50 @@ Tab2:AddToggle("Tab2Toggle", { Text = "Tab2 Toggle" })
 local ScrollGroup = Tabs.Main:AddLeftGroupbox("Groupbox #2")
 ScrollGroup:AddLabel("This label spans multiple lines! We're gonna run out of UI space...\nJust kidding! Scroll down!\n\n\nHello from below!", true)
 
+local DependencyToggle = ScrollGroup:AddToggle("ShowAdvanced", {
+    Text = "Show advanced controls",
+    Default = false,
+})
+
+local DependencyBox = ScrollGroup:AddDependencyBox()
+DependencyBox:AddSlider("AdvancedAmount", {
+    Text = "Advanced amount",
+    Default = 50,
+    Min = 0,
+    Max = 100,
+    Rounding = 0,
+})
+DependencyBox:SetupDependencies({ { DependencyToggle, true } })
+
+ScrollGroup:AddButton({
+    Text = "Open dialog",
+    Func = function()
+        Window:AddDialog("ExampleDialog", {
+            Title = "Test Dialog",
+            Description = "This dialog has configurable buttons.",
+            Buttons = {
+                { Id = "Cancel", Text = "Cancel", Order = 1 },
+                { Id = "Delete", Text = "Delete", Order = 2, Risky = true },
+                { Id = "Confirm", Text = "Confirm", Order = 3 },
+            },
+        })
+    end,
+})
+
+ScrollGroup:AddButton({
+    Text = "Show loading",
+    Func = function()
+        local Loading = Library:CreateLoading({ Message = "Obsidian Matcha", Description = "Loading features...", TotalSteps = 3 })
+        task.spawn(function()
+            for step = 1, 3 do
+                Loading:SetCurrentStep(step)
+                task.wait(0.35)
+            end
+            Loading:Destroy()
+        end)
+    end,
+})
+
 Tabs.Key:AddLabel({
     Text = "Key: Banana",
     DoesWrap = true,
@@ -368,7 +412,17 @@ Tabs.Key:AddKeyBox(function(receivedKey)
     })
 end)
 
-Library:AddDraggableLabel("This is a Draggable Label")
+Library:AddDraggableLabel("Obsidian Matcha | overlay")
+Library:AddDraggableButton("Toggle UI", function()
+    Library:Toggle()
+end, false, "panel-left")
+
+local StatsMenu, StatsContainer = Library:AddDraggableMenu("Stats")
+StatsContainer:AddLabel("Drawing overlay")
+StatsContainer:AddValue("Lucide: lazy")
+StatsContainer:AddButton("Close", function()
+    StatsMenu:SetVisible(false)
+end)
 
 Library:OnUnload(function()
     print("Unloaded")
@@ -379,5 +433,7 @@ EssentialsManager:BuildSection(Tabs["UI Settings"])
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
+ThemeManager:SetFolder("Galax/Obsidian/Settings")
+SaveManager:SetFolder("Galax/Obsidian/Settings")
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
 ThemeManager:ApplyToTab(Tabs["UI Settings"])

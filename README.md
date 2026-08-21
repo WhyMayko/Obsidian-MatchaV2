@@ -50,7 +50,7 @@ local EssentialsManager = loadAddon("addons/EssentialsManager.lua")
 local WebhookManager = loadAddon("addons/WebhookManager.lua")
 ```
 
-`Loader.lua` loads the core modules and cached PNG assets once before it loads `Library.lua`: TextManager, AnimationManager, DialogManager and NotificationManager. ThemeManager and the other addons remain opt-in.
+`Loader.lua` loads the core modules and only the essential PNG assets before it loads `Library.lua`. Missing Lucide icons are downloaded on first use and cached for the session. TextManager, AnimationManager, DialogManager and NotificationManager are integrated into the core; ThemeManager and the persistence managers remain opt-in.
 
 ### WebhookManager
 
@@ -76,7 +76,10 @@ WebhookManager:BuildWebhookSection(tab)
 - Dropdowns, searchable dropdowns and multi dropdowns
 - Color pickers and color picker pairs
 - Key pickers and key tab/key box
-- Notifications and draggable labels
+- Notifications, configurable dialogs and loading overlay
+- Draggable labels, buttons and Drawing-native menus
+- Dependency boxes and dependency groupboxes
+- Runtime Window title, footer, sidebar width, compact mode and animation controls
 - ThemeManager, SaveManager and EssentialsManager
 
 ## Common Patterns
@@ -112,6 +115,28 @@ Group:AddDropdown("Mode", {
     Default = "A",
     Searchable = true,
 })
+```
+
+Dependency box:
+
+```lua
+local Enabled = Group:AddToggle("Advanced", { Text = "Advanced" })
+local Box = Group:AddDependencyBox()
+Box:AddSlider("Amount", { Text = "Amount", Min = 0, Max = 100 })
+Box:SetupDependencies({ { Enabled, true } })
+```
+
+Window and managers:
+
+```lua
+Window:ChangeTitle("New title")
+Window:SetFooter("v2")
+Window:SetSidebarWidth(220)
+Window:SetCompact(false)
+Window:SetAnimations(true)
+
+ThemeManager:SetFolder("Galax/Obsidian/Settings")
+SaveManager:SetFolder("Galax/Obsidian/Settings")
 ```
 
 Managers:

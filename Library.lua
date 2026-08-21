@@ -11,6 +11,8 @@ GalaxObsidian.TransparencyTextureUrl =
     "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/TransparencyTexture.png"
 GalaxObsidian.SaturationTextureUrl =
     "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/SaturationMap.png"
+GalaxObsidian.LucideIconUrl =
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/icons/lucide/"
 
 GalaxObsidian.Options = {}
 GalaxObsidian.Toggles = {}
@@ -251,6 +253,7 @@ function DialogManager:Dialog(options)
 	end
 
 	local dialog = {
+		id = options.Index or options.Id or options.id,
 		title = options.Title or options.title or "Dialog",
 		message = options.Description or options.Message or options.message or "",
 		buttons = options.Buttons or options.buttons or {},
@@ -263,6 +266,10 @@ function DialogManager:Dialog(options)
 
 	if #dialog.buttons == 0 then
 		dialog.buttons = { { Text = "OK", Callback = function() end, Primary = true } }
+	end
+	for index, button in ipairs(dialog.buttons) do
+		button.Id = button.Id or button.Index or button.Text or tostring(index)
+		button.Order = tonumber(button.Order) or index
 	end
 
 	win.Dialogs = win.Dialogs or {}
@@ -278,6 +285,62 @@ function DialogManager:Dialog(options)
 
 	function dialog:SetMessage(text)
 		self.message = text or ""
+	end
+
+	function dialog:SetDescription(text)
+		self.message = text or ""
+	end
+
+	function dialog:AddFooterButton(id, info)
+		info = type(info) == "table" and info or { Text = tostring(info or id) }
+		local button = {
+			Id = tostring(id),
+			Text = info.Text or tostring(id),
+			Callback = info.Callback or info.Func,
+			Primary = info.Primary == true,
+			Risky = info.Risky == true,
+			Disabled = info.Disabled == true,
+			Close = info.Close ~= false,
+			Order = tonumber(info.Order) or (#self.buttons + 1),
+		}
+		self.buttons[#self.buttons + 1] = button
+		return button
+	end
+
+	function dialog:RemoveFooterButton(id)
+		for index = #self.buttons, 1, -1 do
+			if tostring(self.buttons[index].Id) == tostring(id) then
+				table.remove(self.buttons, index)
+				return true
+			end
+		end
+		return false
+	end
+
+	function dialog:SetButtonDisabled(id, state)
+		for _, button in ipairs(self.buttons) do
+			if tostring(button.Id) == tostring(id) then
+				button.Disabled = state == true
+				return true
+			end
+		end
+		return false
+	end
+
+	function dialog:SetButtonOrder(id, order)
+		order = tonumber(order)
+		assert(order, "Dialog button order must be a number!")
+		for _, button in ipairs(self.buttons) do
+			if tostring(button.Id) == tostring(id) then
+				button.Order = order
+				return true
+			end
+		end
+		return false
+	end
+
+	function dialog:Dismiss()
+		self:Destroy()
 	end
 
 	return dialog
@@ -309,6 +372,9 @@ function DialogManager:RenderDialogs(window)
 	end
 
 	for _, dialog in ipairs(window.Dialogs) do
+		table.sort(dialog.buttons, function(left, right)
+			return (left.Order or 0) < (right.Order or 0)
+		end)
 		local dw = math.floor(dialog.width * scale)
 		local dh = math.floor(math.max(120, 80 + #dialog.buttons * 10) * scale)
 		local dx = math.floor((vp.X - dw) / 2)
@@ -354,10 +420,12 @@ function DialogManager:RenderDialogs(window)
 			end
 			local bw = btnWidths[i]
 			local primary = btn.Primary == true
-			local btnColor = primary and window.Theme.Accent or window.Theme.Main2
+			local btnColor = btn.Risky and Color3.fromRGB(210, 50, 65) or (primary and window.Theme.Accent or window.Theme.Surface)
 			local hovered = window:_over(bx, btnY, bw, btnH)
-			if hovered then
-				btnColor = primary and window.Theme.Accent or window.Theme.Main3
+			if btn.Disabled then
+				btnColor = window.Theme.Main
+			elseif hovered then
+				btnColor = primary and window.Theme.Accent or window.Theme.Surface2
 			end
 
 			window:_square(bx, btnY, bw, btnH, btnColor, true, 1, 5, z + 4)
@@ -369,7 +437,7 @@ function DialogManager:RenderDialogs(window)
 				14, Drawing.Fonts.Monospace, true, false, z + 6
 			)
 
-			if hovered and window:_click(bx, btnY, bw, btnH, dialog) then
+			if not btn.Disabled and hovered and window:_click(bx, btnY, bw, btnH, dialog) then
 				if btn.Callback then
 					local ok, err = pcall(btn.Callback, dialog)
 					if not ok then error("DialogManager btn.Callback: " .. tostring(err), 2) end
@@ -944,6 +1012,35 @@ local function makeHandle(widget)
             end
         end
     end
+    function handle:SetDisabledValues(values)
+        if widget.type == "dropdown" or widget.type == "multidropdown" then
+            widget.disabledValues = values or {}
+        end
+    end
+    function handle:AddDisabledValues(values)
+        if widget.type == "dropdown" or widget.type == "multidropdown" then
+            for _, value in ipairs(values or {}) do
+                widget.disabledValues[#widget.disabledValues + 1] = value
+            end
+        end
+    end
+    function handle:SetValueImages(values)
+        if widget.type == "dropdown" or widget.type == "multidropdown" then
+            widget.valueImages = values or {}
+        end
+    end
+    function handle:AddValueImages(values)
+        if widget.type == "dropdown" or widget.type == "multidropdown" then
+            for value, image in pairs(values or {}) do
+                widget.valueImages[value] = image
+            end
+        end
+    end
+    function handle:SetDragSelect(state)
+        if widget.type == "dropdown" or widget.type == "multidropdown" then
+            widget.dragSelect = state == true
+        end
+    end
     function handle:AddOption(value)
         if widget.type == "dropdown" or widget.type == "multidropdown" then
             widget.options[#widget.options + 1] = value
@@ -964,7 +1061,7 @@ local function makeHandle(widget)
             end
         end
     end
-    function handle:GetActiveValues()
+    function handle:GetActiveValues(countOnly)
         if widget.type == "multidropdown" then
             local result = {}
 
@@ -973,12 +1070,12 @@ local function makeHandle(widget)
                     result[#result + 1] = v
                 end
             end
-            return result
+            return countOnly and #result or result
         end
         if widget.value == nil or widget.value == "" then
-            return {}
+            return countOnly and 0 or {}
         end
-        return { widget.value }
+        return countOnly and 1 or { widget.value }
     end
     function handle:Select(value)
         if widget.type == "dropdown" then
@@ -1157,6 +1254,18 @@ do
     end
 end
 
+local function dependencyVisible(widget)
+    local box = widget and widget.dependencyBox
+    if not box then return true end
+    for _, dependency in ipairs(box.dependencies or {}) do
+        local source = dependency[1]
+        local expected = dependency[2]
+        local value = source and source.Get and source:Get() or source and source.Value
+        if value ~= expected then return false end
+    end
+    return true
+end
+
 local function applyChromeOffsets(base, skip)
     for field, offset in pairs(ChromeOffsets) do
         if not (skip and skip[field]) then
@@ -1187,6 +1296,18 @@ function GalaxObsidian:AddDraggableLabel(text)
         error("AddDraggableLabel: no active window", 2)
     end
     return win:AddDraggableLabel(text)
+end
+
+function GalaxObsidian:AddDraggableButton(...)
+    local win = self.ActiveWindow
+    assert(win, "AddDraggableButton requires an active window!")
+    return win:AddDraggableButton(...)
+end
+
+function GalaxObsidian:AddDraggableMenu(...)
+    local win = self.ActiveWindow
+    assert(win, "AddDraggableMenu requires an active window!")
+    return win:AddDraggableMenu(...)
 end
 
 local TextChars = TextManager.TextChars
@@ -1518,6 +1639,9 @@ function GalaxObsidian:CreateWindow(options)
         KeybindMenuY = options.KeybindMenuY or keybindMenuOptions.Y,
         KeybindMenuWidth = options.KeybindMenuWidth or keybindMenuOptions.Width,
         NotifySide = options.NotifySide or "Right",
+        SidebarWidth = tonumber(options.SidebarWidth) or 200,
+        Compact = options.Compact == true,
+        AnimationsEnabled = options.Animations ~= false,
         Open = options.StartMinimized ~= true,
         Running = true,
         Tabs = {},
@@ -1560,6 +1684,9 @@ function GalaxObsidian:CreateWindow(options)
         _focus = nil,
         KeybindMenuDrag = nil,
         DraggableLabels = {},
+        DraggableButtons = {},
+        DraggableMenus = {},
+        _iconRequests = {},
         LastRobloxInputBlocked = nil,
         BlockClicks = false,
         _lastActivity = tick(),
@@ -2068,16 +2195,35 @@ function GalaxObsidian:CreateWindow(options)
         size = size or 14
         name = IconAliases[name] or name
         local data = IconData[name]
+        if not data and name:match("^[%w%-]+$") then
+            local url = GalaxObsidian.LucideIconUrl .. name .. ".png"
+            if not self._iconRequests[name] then
+                self._iconRequests[name] = true
+                RequestImage(url, function(downloaded)
+                    IconData[name] = downloaded
+                    self._iconRequests[name] = nil
+                end)
+            end
+            return false
+        end
         if not data then return false end
         return self:_image(data, math.floor(x - size / 2), math.floor(y - size / 2), size, size, 0, z, active == true and 0.8 or 0.6) ~= nil
     end
     function Window:_anim(owner, key, target, speed)
+        if self.AnimationsEnabled == false then
+            AnimationManager:Reset(owner or self, key)
+            return target
+        end
         return AnimationManager:Approach(owner or self, key, target, speed or 14)
     end
     function Window:_hotInteraction()
         return self.DragOffset ~= nil or self.ResizeOffset ~= nil or self.ScrollTarget ~= nil
     end
     function Window:_animOrSnap(owner, key, target, speed, snap)
+        if self.AnimationsEnabled == false then
+            AnimationManager:Reset(owner or self, key)
+            return target
+        end
         if snap or self:_hotInteraction() then
             AnimationManager:Reset(owner or self, key)
             return target
@@ -2769,7 +2915,7 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:_matchesSearch(widget, section)
-        if widget.visible == false then
+        if widget.visible == false or not dependencyVisible(widget) then
             return false
         end
         local search = string.lower(self.SearchText or "")
@@ -2804,7 +2950,7 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:_widgetHeight(widget)
-        if widget.visible == false then
+        if widget.visible == false or not dependencyVisible(widget) then
             return 0
         end
         local scale = self:GetScale()
@@ -4095,6 +4241,9 @@ function GalaxObsidian:CreateWindow(options)
         local listPad = math.floor(2 * scale)
         local listW = info.w - scrollBarW - (hasScroll and math.floor(2 * scale) or 0)
         local listStartY = info.y + math.floor(2 * scale)
+        if not self.Mouse1Held then
+            widget._dragVisited = nil
+        end
         for i = 1, visibleCount do
             local optionIndex = i + scrollOffset
             local option = filteredOptions[optionIndex]
@@ -4126,9 +4275,34 @@ function GalaxObsidian:CreateWindow(options)
                 16
             )
             self:_square(optionX, oy, optionW, itemH, optionBg, true, 1, 0, info.z + 2)
+            local optionImage = widget.valueImages and widget.valueImages[option]
+            local optionTextX = info.x + math.floor(18 * scale)
+            if optionImage then
+                local iconX = info.x + math.floor(13 * scale)
+                local iconY = oy + itemH / 2
+                if isImageData(optionImage) then
+                    self:_image(optionImage, iconX - math.floor(7 * scale), iconY - math.floor(7 * scale), math.floor(14 * scale), math.floor(14 * scale), 2, info.z + 6, isDisabled and 0.6 or 0.8)
+                elseif tostring(optionImage):match("^https?://") then
+                    widget._valueImageData = widget._valueImageData or {}
+                    local resolved = widget._valueImageData[option]
+                    if resolved then
+                        self:_image(resolved, iconX - math.floor(7 * scale), iconY - math.floor(7 * scale), math.floor(14 * scale), math.floor(14 * scale), 2, info.z + 6, isDisabled and 0.6 or 0.8)
+                    elseif not widget._valueImageLoading or not widget._valueImageLoading[option] then
+                        widget._valueImageLoading = widget._valueImageLoading or {}
+                        widget._valueImageLoading[option] = true
+                        RequestImage(tostring(optionImage), function(data)
+                            widget._valueImageData[option] = data
+                            widget._valueImageLoading[option] = nil
+                        end)
+                    end
+                else
+                    self:_drawIcon(tostring(optionImage), iconX, iconY, math.floor(14 * scale), selected, info.z + 6)
+                end
+                optionTextX = info.x + math.floor(25 * scale)
+            end
             self:_text(
                 fitTextToWidth(option, listW - math.floor(25 * scale), 14, Theme.Font),
-                info.x + math.floor(18 * scale),
+                optionTextX,
                 oy + math.floor(5 * scale),
                 optionText,
                 14,
@@ -4137,7 +4311,15 @@ function GalaxObsidian:CreateWindow(options)
                 true,
                 info.z + 6
             )
-            if not disabled and not isDisabled and self:_clickFor(widget, optionX, oy, optionW, itemH) then
+            local optionActivated = self:_clickFor(widget, optionX, oy, optionW, itemH)
+            if widget.dragSelect and self.Mouse1Held and self:_over(optionX, oy, optionW, itemH) then
+                widget._dragVisited = widget._dragVisited or {}
+                if not widget._dragVisited[option] then
+                    widget._dragVisited[option] = true
+                    optionActivated = true
+                end
+            end
+            if not disabled and not isDisabled and optionActivated then
                 if info.multi then
                     local isSelected = widget.selected[option]
                     local selectedCount = 0
@@ -4614,7 +4796,7 @@ function GalaxObsidian:CreateWindow(options)
         local scale = self:GetScale()
         for _, label in ipairs(labels) do
             local text = label.text or ""
-            if text ~= "" then
+            if text ~= "" and label.visible ~= false and not label.destroyed then
                 local px, py = label.px or 100, label.py or 100
                 local tw = estimateTextWidth(tostring(text), 15, Drawing.Fonts.Monospace) + math.floor(24 * scale)
                 local th = math.floor(28 * scale)
@@ -4657,6 +4839,125 @@ function GalaxObsidian:CreateWindow(options)
         end
     end
 
+    function Window:_renderDraggableButtons()
+        local scale = self:GetScale()
+        for _, button in ipairs(self.DraggableButtons) do
+            if button.visible ~= false and not button.destroyed then
+                local text = tostring(button.text or "")
+                local iconSpace = button.icon and math.floor(22 * scale) or 0
+                local width = estimateTextWidth(text, 14, Drawing.Fonts.Monospace) + math.floor(24 * scale) + iconSpace
+                local height = math.floor(30 * scale)
+                local x = math.floor((button.px or 100) - width / 2)
+                local y = math.floor((button.py or 140) - height / 2)
+                if button.pressed then
+                    if self.Mouse1Held then
+                        local dx = mouse.X - button.pressX
+                        local dy = mouse.Y - button.pressY
+                        if math.abs(dx) + math.abs(dy) > 4 then button.moved = true end
+                        if button.moved then
+                            button.px = mouse.X - button.doffX
+                            button.py = mouse.Y - button.doffY
+                        end
+                    else
+                        button.pressed = false
+                        self:_releaseInteraction(button)
+                        if not button.moved and type(button.callback) == "function" then pcall(button.callback, button) end
+                    end
+                elseif self:_click(x, y, width, height, button) then
+                    button.pressed = true
+                    button.moved = false
+                    button.pressX = mouse.X
+                    button.pressY = mouse.Y
+                    button.doffX = mouse.X - button.px
+                    button.doffY = mouse.Y - button.py
+                    self:_claimInteraction(button)
+                end
+                local active = button.pressed or self:_over(x, y, width, height)
+                self:_square(x, y, width, height, active and Theme.Surface2 or Theme.Topbar, true, 1, 5, -3)
+                self:_square(x, y, width, height, Theme.SoftOutline, false, 1, 5, -2)
+                local textX = x + math.floor(12 * scale)
+                if button.icon then
+                    local iconX = button.iconPosition == "Right" and x + width - math.floor(14 * scale) or textX + math.floor(7 * scale)
+                    self:_drawIcon(button.icon, iconX, y + height / 2, math.floor(14 * scale), active, -1)
+                    if button.iconPosition ~= "Right" then textX = textX + iconSpace end
+                end
+                self:_text(text, textX, y + math.floor(7 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, -1)
+            end
+        end
+    end
+
+    function Window:_renderDraggableMenus()
+        local scale = self:GetScale()
+        for _, menu in ipairs(self.DraggableMenus) do
+            if menu.visible ~= false and not menu.destroyed then
+                local width = math.floor((menu.width or 220) * scale)
+                local rowHeight = math.floor(25 * scale)
+                local headerHeight = math.floor(30 * scale)
+                local height = headerHeight + math.floor(8 * scale) + #menu.items * rowHeight
+                local x = math.floor(menu.x or 130)
+                local y = math.floor(menu.y or 180)
+                if menu.dragging then
+                    if self.Mouse1Held then
+                        menu.x = mouse.X - menu.doffX
+                        menu.y = mouse.Y - menu.doffY
+                    else
+                        menu.dragging = false
+                        self:_releaseInteraction(menu)
+                    end
+                elseif self:_click(x, y, width, headerHeight, menu) then
+                    menu.dragging = true
+                    menu.doffX = mouse.X - x
+                    menu.doffY = mouse.Y - y
+                    self:_claimInteraction(menu)
+                end
+                self:_square(x, y, width, height, Theme.Background, true, 1, 6, -4)
+                self:_square(x, y, width, height, Theme.Outline, false, 1, 6, -3)
+                self:_square(x, y, width, headerHeight, Theme.Topbar, true, 1, 6, -2)
+                self:_text(tostring(menu.title or "Menu"), x + math.floor(10 * scale), y + math.floor(8 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, -1)
+                for index, item in ipairs(menu.items) do
+                    if item.visible ~= false and not item.destroyed then
+                        local rowY = y + headerHeight + math.floor(4 * scale) + (index - 1) * rowHeight
+                        local hovered = self:_over(x + 4, rowY, width - 8, rowHeight)
+                        if item.kind == "button" and hovered then
+                            self:_square(x + 4, rowY, width - 8, rowHeight, Theme.PopupHover, true, 1, 3, -2)
+                            if self:_click(x + 4, rowY, width - 8, rowHeight, item) and type(item.callback) == "function" then pcall(item.callback, item, menu) end
+                        end
+                        self:_text(tostring(item.text or ""), x + math.floor(10 * scale), rowY + math.floor(6 * scale) - _yOfs(scale), item.kind == "value" and Theme.Muted or Theme.Text, 13, Drawing.Fonts.Monospace, false, true, -1)
+                    end
+                end
+            end
+        end
+    end
+
+    function Window:_renderLoading()
+        local loading = self.LoadingOverlay
+        if not loading or loading.closed then return nil end
+        local camera = workspace.CurrentCamera
+        local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+        local scale = self:GetScale()
+        local width = math.floor((loading.width or 460) * scale)
+        local height = math.floor((loading.height or 190) * scale)
+        local x = math.floor((viewport.X - width) / 2)
+        local y = math.floor((viewport.Y - height) / 2)
+        local z = 180
+        self:_square(0, 0, viewport.X, viewport.Y, Color3.new(0, 0, 0), true, 0.6, 0, z)
+        self:_square(x, y, width, height, Theme.Background, true, 1, 8, z + 1)
+        self:_square(x, y, width, height, Theme.Outline, false, 1, 8, z + 2)
+        local pad = math.floor(18 * scale)
+        self:_text(fitTextToWidth(loading.message, width - pad * 2, 20, Theme.Font), x + pad, y + pad, Theme.Text, 20, Drawing.Fonts.Monospace, false, true, z + 3)
+        self:_text(fitTextToWidth(loading.description, width - pad * 2, 14, Theme.Font), x + pad, y + math.floor(55 * scale), Theme.Muted, 14, Drawing.Fonts.Monospace, false, true, z + 3)
+        local total = math.max(1, tonumber(loading.totalSteps) or 1)
+        local current = clamp(tonumber(loading.currentStep) or 0, 0, total)
+        local barX = x + pad
+        local barY = y + height - math.floor(54 * scale)
+        local barW = width - pad * 2
+        local barH = math.floor(12 * scale)
+        self:_square(barX, barY, barW, barH, Theme.Main, true, 1, 4, z + 3)
+        self:_square(barX, barY, math.floor(barW * current / total), barH, loading.errorMessage and Color3.fromRGB(210, 50, 65) or Theme.Accent, true, 1, 4, z + 4)
+        local status = loading.errorMessage or (tostring(current) .. "/" .. tostring(total))
+        self:_text(status, x + width / 2, barY + math.floor(20 * scale), loading.errorMessage and Color3.fromRGB(255, 110, 120) or Theme.Muted, 14, Drawing.Fonts.Monospace, true, true, z + 4)
+    end
+
     function Window:_renderTooltip()
         local text = self.TooltipText
         if not text or text == "" or self.Mouse1Held then
@@ -4693,7 +4994,7 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:_windowLayout(x, y, w, h, scale)
-        local sidebarW = math.floor(200 * scale)
+        local sidebarW = math.floor((self.Compact and 72 or self.SidebarWidth or 200) * scale)
         local topH = math.floor(48 * scale)
         local bottomH = math.floor(20 * scale)
         local pad = math.floor(8 * scale)
@@ -4730,7 +5031,10 @@ function GalaxObsidian:CreateWindow(options)
             self:_renderKeybindMenu()
             self:_renderKeybindModePopup()
             self:_renderDraggableLabels()
+            self:_renderDraggableButtons()
+            self:_renderDraggableMenus()
             NotificationManager:RenderNotifications(self)
+            self:_renderLoading()
             self:_renderTooltip()
             self:_hideUnused()
             return nil
@@ -5026,7 +5330,10 @@ function GalaxObsidian:CreateWindow(options)
         self:_renderKeybindMenu()
         self:_renderKeybindModePopup()
         self:_renderDraggableLabels()
+        self:_renderDraggableButtons()
+        self:_renderDraggableMenus()
         NotificationManager:RenderNotifications(self)
+        self:_renderLoading()
         self:_renderTooltip()
         GalaxObsidian.DialogManager:RenderDialogs(self)
         self:_hideUnused()
@@ -5034,6 +5341,15 @@ function GalaxObsidian:CreateWindow(options)
 
     function Window:Notify(message, title, duration)
         return NotificationManager:Notify(message, title, duration)
+    end
+    function Window:AddDialog(id, options)
+        if type(id) == "table" then
+            options = id
+        else
+            options = options or {}
+            options.Index = options.Index or id
+        end
+        return DialogManager:Dialog(options)
     end
     function Window:AddDraggableLabel(text)
         local labels = self.DraggableLabels
@@ -5044,9 +5360,58 @@ function GalaxObsidian:CreateWindow(options)
             dragging = false,
             doffX = 0,
             doffY = 0,
+            visible = true,
         }
         table.insert(labels, entry)
+        function entry:SetText(value)
+            self.text = tostring(value or "")
+        end
+        function entry:SetVisible(state)
+            self.visible = state == true
+        end
+        function entry:Destroy()
+            self.destroyed = true
+            self.visible = false
+        end
         return entry
+    end
+    function Window:AddDraggableButton(text, callback, excludeDpi, icon, iconPosition)
+        local entry = {
+            text = tostring(text or ""), callback = callback, px = 100, py = 140,
+            visible = true, excludeDpi = excludeDpi == true, icon = icon,
+            iconPosition = iconPosition == "Right" and "Right" or "Left",
+        }
+        table.insert(self.DraggableButtons, entry)
+        function entry:SetText(value) self.text = tostring(value or "") end
+        function entry:SetVisible(state) self.visible = state == true end
+        function entry:Destroy() self.destroyed = true; self.visible = false end
+        return entry
+    end
+    function Window:AddDraggableMenu(title, options)
+        options = options or {}
+        local menu = {
+            title = tostring(title or "Menu"), x = tonumber(options.X) or 130,
+            y = tonumber(options.Y) or 180, width = tonumber(options.Width) or 220,
+            visible = true, items = {},
+        }
+        local container = {}
+        table.insert(self.DraggableMenus, menu)
+        function menu:SetTitle(value) self.title = tostring(value or "") end
+        function menu:SetVisible(state) self.visible = state == true end
+        function menu:SetWidth(value) self.width = math.max(120, tonumber(value) or self.width) end
+        function menu:Destroy() self.destroyed = true; self.visible = false end
+        local function addItem(kind, text, callback)
+            local item = { kind = kind, text = tostring(text or ""), callback = callback, visible = true }
+            table.insert(menu.items, item)
+            function item:SetText(value) self.text = tostring(value or "") end
+            function item:SetVisible(state) self.visible = state == true end
+            function item:Destroy() self.destroyed = true; self.visible = false end
+            return item
+        end
+        function container:AddLabel(text) return addItem("label", text) end
+        function container:AddValue(text) return addItem("value", text) end
+        function container:AddButton(text, callback) return addItem("button", text, callback) end
+        return menu, container
     end
 
     function Window:GetMemoryUsage()
@@ -5110,6 +5475,29 @@ function GalaxObsidian:CreateWindow(options)
     function Window:SetNotifySide(side)
         side = tostring(side or "Right")
         self.NotifySide = side == "Left" and "Left" or "Right"
+    end
+    function Window:ChangeTitle(title)
+        self.Title = tostring(title or "")
+    end
+    function Window:SetFooter(footer)
+        self.Footer = tostring(footer or "")
+    end
+    function Window:GetSidebarWidth()
+        return self.Compact and 72 or self.SidebarWidth
+    end
+    function Window:SetSidebarWidth(width)
+        width = tonumber(width)
+        assert(width and width >= 72 and width <= 360, "Sidebar width must be between 72 and 360!")
+        self.SidebarWidth = width
+    end
+    function Window:SetCompact(state)
+        self.Compact = state == true
+    end
+    function Window:IsSidebarCompacted()
+        return self.Compact == true
+    end
+    function Window:SetAnimations(state)
+        self.AnimationsEnabled = state ~= false
     end
     function Window:SetKeybindMenuVisible(state)
         self.ShowKeybindMenu = state == true
@@ -5777,6 +6165,8 @@ function GalaxObsidian:CreateWindow(options)
                     disabledTooltip = config.DisabledTooltip,
                     disabled = config.Disabled == true,
                     disabledValues = config.DisabledValues or {},
+                    valueImages = config.ValueImages or {},
+                    dragSelect = config.AllowDragSelect == true or config.DragSelect == true,
                     searchable = searchable,
                     _searchText = searchable and "" or nil,
                     specialType = config.SpecialType,
@@ -5849,6 +6239,8 @@ function GalaxObsidian:CreateWindow(options)
                     tooltip = config.Tooltip,
                     disabled = config.Disabled == true,
                     disabledValues = config.DisabledValues or {},
+                    valueImages = config.ValueImages or {},
+                    dragSelect = config.AllowDragSelect == true or config.DragSelect == true,
                     searchable = searchable,
                     _searchText = searchable and "" or nil,
                     formatDisplayValue = config.FormatDisplayValue,
@@ -6040,6 +6432,32 @@ function GalaxObsidian:CreateWindow(options)
             Section.AddDivider = function()
                 return Window:_widgetHandle(register({ type = "divider", visible = true }))
             end
+            local function dependencyBox()
+                local box = { dependencies = {} }
+                function box:SetupDependencies(dependencies)
+                    self.dependencies = dependencies or {}
+                    return self
+                end
+                return setmetatable(box, {
+                    __index = function(_, key)
+                        local method = Section[key]
+                        if type(method) ~= "function" then return nil end
+                        return function(_, ...)
+                            local handle = method(Section, ...)
+                            if handle and handle.Widget then
+                                handle.Widget.dependencyBox = box
+                            end
+                            return handle
+                        end
+                    end,
+                })
+            end
+            function Section:AddDependencyBox()
+                return dependencyBox()
+            end
+            function Section:AddDependencyGroupbox()
+                return dependencyBox()
+            end
             return Section
         end
 
@@ -6143,6 +6561,34 @@ function GalaxObsidian:CreateWindow(options)
     DialogManager:SetLibrary(GalaxObsidian)
     NotificationManager:SetLibrary(GalaxObsidian)
     return Window
+end
+
+function GalaxObsidian:CreateLoading(options)
+    options = options or {}
+    local window = self.ActiveWindow
+    assert(window, "CreateLoading requires an active window!")
+    local loading = {
+        message = tostring(options.Message or options.Title or "Loading"),
+        description = tostring(options.Description or "Please wait..."),
+        currentStep = tonumber(options.CurrentStep) or 0,
+        totalSteps = math.max(1, tonumber(options.TotalSteps) or 1),
+        width = tonumber(options.Width) or 460,
+        height = tonumber(options.Height) or 190,
+        closed = false,
+    }
+    function loading:SetMessage(value) self.message = tostring(value or "") end
+    function loading:SetDescription(value) self.description = tostring(value or "") end
+    function loading:SetCurrentStep(value) self.currentStep = tonumber(value) or self.currentStep end
+    function loading:SetTotalSteps(value) self.totalSteps = math.max(1, tonumber(value) or self.totalSteps) end
+    function loading:SetWindowWidth(value) self.width = math.max(280, tonumber(value) or self.width) end
+    function loading:SetWindowHeight(value) self.height = math.max(140, tonumber(value) or self.height) end
+    function loading:SetErrorMessage(value) self.errorMessage = tostring(value or "") end
+    function loading:ShowErrorPage(value) self.errorMessage = tostring(value or self.errorMessage or "Unknown error") end
+    function loading:ShowSidebarPage() self.errorMessage = nil end
+    function loading:Continue() self.errorMessage = nil end
+    function loading:Destroy() self.closed = true; if window.LoadingOverlay == self then window.LoadingOverlay = nil end end
+    window.LoadingOverlay = loading
+    return loading
 end
 
 function GalaxObsidian:Toggle(state)
