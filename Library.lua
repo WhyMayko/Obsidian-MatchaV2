@@ -2069,7 +2069,7 @@ function GalaxObsidian:CreateWindow(options)
         name = IconAliases[name] or name
         local data = IconData[name]
         if not data then return false end
-        return self:_image(data, math.floor(x - size / 2), math.floor(y - size / 2), size, size, 0, z, active and 1 or 0.55) ~= nil
+        return self:_image(data, math.floor(x - size / 2), math.floor(y - size / 2), size, size, 0, z, active == true and 0.8 or 0.6) ~= nil
     end
     function Window:_anim(owner, key, target, speed)
         return AnimationManager:Approach(owner or self, key, target, speed or 14)
@@ -2935,7 +2935,7 @@ function GalaxObsidian:CreateWindow(options)
         self:_square(boxX, boxY, boxSize, boxSize, checkBoxBg, true, disabled and 0.55 or 1, 2, z + 1)
         self:_square(boxX, boxY, boxSize, boxSize, checkBoxOutline, false, disabled and 0.55 or 1, 2, z + 2)
         if widget.value then
-            self:_drawIcon("check", boxX + math.floor(7 * scale), y + math.floor(9 * scale), math.floor(12 * scale), Theme.Text, z + 4)
+            self:_drawIcon("check", boxX + math.floor(7 * scale), y + math.floor(9 * scale), math.floor(12 * scale), true, z + 4)
         end
         self:_text(
             fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font),
@@ -3181,12 +3181,6 @@ function GalaxObsidian:CreateWindow(options)
         local dropdownBg = self:_anim(widget, "dropdown.bg", Theme.Surface, 16)
         local dropdownOutline =
             self:_anim(widget, "dropdown.outline", Theme.Outline, 16)
-        local dropdownIcon = self:_anim(
-            widget,
-            "dropdown.icon",
-            disabled and Theme.DimText or (isOpen and Theme.Text or Theme.Muted),
-            16
-        )
         local dropdownLabel = self:_anim(widget, "dropdown.label.text", disabled and Theme.Muted or Theme.Text, 16)
         local scale = self:GetScale()
         local boxY = y + math.floor(18 * scale)
@@ -3220,7 +3214,7 @@ function GalaxObsidian:CreateWindow(options)
             z + 3,
             true
         )
-        self:_drawIcon(isOpen and "chevron-up" or "chevron-down", x + w - math.floor(14 * scale), iconY, math.floor(14 * scale), dropdownIcon, z + 3)
+        self:_drawIcon(isOpen and "chevron-up" or "chevron-down", x + w - math.floor(14 * scale), iconY, math.floor(14 * scale), isOpen, z + 3)
         widget.popup = { x = x, y = popupY, w = w, z = 120, multi = multi }
 
         if not disabled and self:_focusClick(x, boxY, w, boxH, widget) then
@@ -4494,7 +4488,7 @@ function GalaxObsidian:CreateWindow(options)
                     self:_square(cbX, cbY, cbSize, cbSize, checkboxBg, true, 1, 2, 2)
                     self:_square(cbX, cbY, cbSize, cbSize, checkboxOutline, false, 1, 2, 3)
                     if row.checked then
-                        self:_drawIcon("check", cbX + math.floor(cbSize / 2), cbY + math.floor(cbSize / 2), math.floor(10 * scale), Theme.Text, 4)
+                        self:_drawIcon("check", cbX + math.floor(cbSize / 2), cbY + math.floor(cbSize / 2), math.floor(10 * scale), true, 4)
                     end
                     if self:_click(cbX, cbY, cbSize, cbSize) then
                         local target = row.widget
@@ -4596,7 +4590,7 @@ function GalaxObsidian:CreateWindow(options)
                 self:_square(x + math.floor(3 * scale), ry, w - math.floor(6 * scale), rowH - 1, Theme.Surface2, true, 1, 2, z + 1)
             end
             if selected then
-                self:_drawIcon("check", x + math.floor(12 * scale), ry + math.floor(rowH / 2), math.floor(10 * scale), self.Accent, z + 3)
+                self:_drawIcon("check", x + math.floor(12 * scale), ry + math.floor(rowH / 2), math.floor(10 * scale), true, z + 3)
             end
             local scaledModeTextSize = math.floor(14 * scale + 0.5)
             local yOfs = _yOfs(scale)
@@ -4870,7 +4864,7 @@ function GalaxObsidian:CreateWindow(options)
                 x + w - math.floor(10 * scale),
                 y + h - bottomH / 2,
                 math.floor(14 * scale),
-                Theme.Outline,
+                self.ResizeOffset ~= nil,
                 chromeZ + 5
             )
         end
@@ -4934,7 +4928,7 @@ function GalaxObsidian:CreateWindow(options)
                 4,
                 chromeZ + 4
             )
-            self:_drawIcon("search", searchX + math.floor(16 * scale), searchY + searchH / 2, math.floor(16 * scale), Theme.Muted, chromeZ + 5)
+            self:_drawIcon("search", searchX + math.floor(16 * scale), searchY + searchH / 2, math.floor(16 * scale), self.SearchFocused or overSearch, chromeZ + 5)
             self:_renderTextInputValue(
                 self.SearchText,
                 self.SearchPlaceholder,
@@ -4958,7 +4952,7 @@ function GalaxObsidian:CreateWindow(options)
             self.SearchFocused = false
             self:_releaseInteraction("Search", true)
         end
-        self:_drawIcon("move", dragX, dragY, dragSize, Theme.Outline, chromeZ + 5)
+        self:_drawIcon("move", dragX, dragY, dragSize, self.DragOffset ~= nil, chromeZ + 5)
         local chromeTabY = y + topH
         for _, tab in ipairs(self.Tabs) do
             local active = tab == self.ActiveTab
