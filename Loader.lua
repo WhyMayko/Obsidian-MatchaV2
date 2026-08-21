@@ -66,4 +66,8 @@ end
 _G.Galax = _G.Galax or {}
 _G.Galax["Loader.lua"] = Loader
 
-return Loader:Load()
+local library = Loader:Load()
+assert(type(library) == "table", "Loader.lua failed to return Library.lua!")
+_G.Galax["Library.lua"] = library
+
+return library

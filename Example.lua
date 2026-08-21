@@ -1,6 +1,11 @@
 local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 
-local Library = assert(loadstring(game:HttpGet(repo .. "Loader.lua")))()
+local loader = assert(loadstring(game:HttpGet(repo .. "Loader.lua")))
+local Library = loader()
+if type(Library) ~= "table" then
+    Library = _G.Galax and _G.Galax["Library.lua"]
+end
+assert(type(Library) == "table", "Example.lua failed to load Library.lua!")
 
 local function loadAddon(path)
     return assert(loadstring(game:HttpGet(repo .. path)))()
