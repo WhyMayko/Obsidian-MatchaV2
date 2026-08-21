@@ -1,0 +1,13 @@
+{
+  "name": "Sahur",
+  "FontColor": "#ffe6cc",
+  "MainColor": "#3c2a1e",
+  "AccentColor": "#d68a59",
+  "BackgroundColor": "#1f150f",
+  "OutlineColor": "#523c2c",
+  "WindowFooter":  "Tung Tung Tung Sahur",
+  "SidebarImage": "https://i.postimg.cc/KzrhyDzx/Sahur.png",
+  "SidebarImageScale": 1.5,
+  "SidebarImageX": 0,
+  "SidebarImageY": 0
+}

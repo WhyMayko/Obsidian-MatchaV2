@@ -1,0 +1,13 @@
+{
+    "name":  "Matcha-Waifu",
+    "FontColor":  "#e8f0e6",
+    "MainColor":  "#162b19",
+    "AccentColor":  "#6db542",
+    "BackgroundColor":  "#0e1a10",
+    "OutlineColor":  "#2a4a2c",
+    "WindowFooter":  "Matcha-Waifu",
+    "SidebarImage":  "https://i.postimg.cc/Vs78N5KK/waifu.png",
+    "SidebarImageScale":  1.5,
+    "SidebarImageX":  0,
+    "SidebarImageY":  0
+}
