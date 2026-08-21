@@ -1,6 +1,6 @@
 local Loader = {}
 
-Loader.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/"
+Loader.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 Loader.CoreModules = {}
 Loader.CoreAssets = {
     "assets/icons/check.png",

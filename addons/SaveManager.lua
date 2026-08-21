@@ -423,7 +423,7 @@ end
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/SaveManager.lua"] = SaveManager
 
-local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/community/"
+local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/community/"
 
 _G.community = _G.community or {}
 

@@ -8,9 +8,9 @@ GalaxObsidian.Version = "1.0.0"
 GalaxObsidian.ImageCache = GalaxObsidian.ImageCache or {}
 
 GalaxObsidian.TransparencyTextureUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/TransparencyTexture.png"
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/TransparencyTexture.png"
 GalaxObsidian.SaturationTextureUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/SaturationMap.png"
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/SaturationMap.png"
 
 GalaxObsidian.Options = {}
 GalaxObsidian.Toggles = {}

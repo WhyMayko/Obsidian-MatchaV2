@@ -5,7 +5,7 @@ Obsidian Matcha is a Drawing API UI library for Matcha.
 ## Quick Start
 
 ```lua
-local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/"
+local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 local Library = loadstring(game:HttpGet(repo .. "Loader.lua"))()
 
 local Window = Library:CreateWindow({
@@ -33,7 +33,7 @@ Group:AddToggle("Enabled", {
 Run the full example:
 
 ```lua
-loadstring(game:HttpGet("https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/Example.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/Example.lua"))()
 ```
 
 ## Loading Addons
