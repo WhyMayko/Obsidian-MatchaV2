@@ -320,6 +320,7 @@ function DialogManager:Dialog(options)
 			Id = tostring(id),
 			Text = info.Text or tostring(id),
 			Callback = info.Callback or info.Func,
+			Variant = info.Variant,
 			Primary = info.Primary == true,
 			Risky = info.Risky == true,
 			Disabled = info.Disabled == true,
@@ -445,26 +446,28 @@ function DialogManager:RenderDialogs(window)
 				bx = bx + btnWidths[j] + btnGap
 			end
 			local bw = btnWidths[i]
-			local primary = btn.Primary == true
-			local btnColor = btn.Risky and Color3.fromRGB(210, 50, 65) or (primary and window.Theme.Accent or window.Theme.Surface)
+			local variant = tostring(btn.Variant or (btn.Risky and "Destructive" or (btn.Primary and "Primary" or "Secondary")))
+			local primary = variant == "Primary"
+			local destructive = variant == "Destructive"
+			local ghost = variant == "Ghost"
+			local btnColor = destructive and Color3.fromRGB(210, 50, 65) or (primary and window.Theme.Text or (ghost and window.Theme.Background or window.Theme.Surface))
 			local hovered = window:_over(bx, btnY, bw, btnH)
 			if btn.Disabled then
 				btnColor = window.Theme.Main
 			elseif hovered then
-				btnColor = primary and window.Theme.Accent or window.Theme.Surface2
+				btnColor = destructive and Color3.fromRGB(235, 70, 85) or (primary and window.Theme.Text or window.Theme.Surface2)
 			end
-			local outlineColor = btn.Disabled and window.Theme.SoftOutline or (hovered and window.Theme.Outline2 or window.Theme.Outline)
-			local textColor = btn.Disabled and window.Theme.DimText or (primary and Color3.new(1, 1, 1) or (hovered and window.Theme.Text or window.Theme.Muted))
+			local outlineColor = btn.Disabled and window.Theme.SoftOutline or (primary and window.Theme.Text or (destructive and Color3.fromRGB(210, 50, 65) or (ghost and window.Theme.Background or (hovered and window.Theme.Outline2 or window.Theme.Outline))))
+			local textColor = btn.Disabled and window.Theme.DimText or (primary and window.Theme.Background or window.Theme.Text)
 			local animatedButton = window:_anim(btn, "dialog.button", btnColor, 18)
 			local animatedOutline = window:_anim(btn, "dialog.outline", outlineColor, 18)
-			local animatedText = window:_anim(btn, "dialog.text", textColor, 18)
 
 			window:_square(bx, btnY, bw, btnH, animatedButton, true, 1, 5, z + 4)
 			window:_square(bx, btnY, bw, btnH, animatedOutline, false, 1, 5, z + 5)
 			window:_text(
 				TM:Fit(btn.Text or "OK", bw - math.floor(12 * scale), 14, window.Theme.Font, scale),
 				bx + math.floor(bw / 2), btnY + math.floor(6 * scale),
-				animatedText,
+				textColor,
 				14, Drawing.Fonts.Monospace, true, false, z + 6
 			)
 

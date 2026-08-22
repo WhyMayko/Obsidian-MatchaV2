@@ -425,9 +425,9 @@ ScrollGroup:AddButton({
             Title = "Test Dialog",
             Description = "This dialog has configurable buttons.",
             Buttons = {
-                { Id = "Cancel", Text = "Cancel", Order = 1 },
-                { Id = "Delete", Text = "Delete", Order = 2, Risky = true },
-                { Id = "Confirm", Text = "Confirm", Order = 3 },
+                { Id = "Cancel", Text = "Cancel", Order = 1, Variant = "Secondary" },
+                { Id = "Delete", Text = "Delete", Order = 2, Variant = "Destructive" },
+                { Id = "Confirm", Text = "Confirm", Order = 3, Variant = "Primary" },
             },
         })
     end,
