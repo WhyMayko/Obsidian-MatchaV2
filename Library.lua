@@ -380,10 +380,13 @@ function DialogManager:RenderDialogs(window)
 		local dh = math.floor(math.max(120, 80 + #dialog.buttons * 10) * scale)
 		local dx = math.floor((vp.X - dw) / 2)
 		local dy = math.floor((vp.Y - dh) / 2)
+		local backdropColor = window:_anim(dialog, "dialog.backdrop", Color3.new(0, 0, 0), 14)
+		local panelColor = window:_anim(dialog, "dialog.panel", window.Theme.Background, 14)
+		local panelOutline = window:_anim(dialog, "dialog.outline", window.Theme.Outline, 14)
 
-		window:_square(0, 0, vp.X, vp.Y, Color3.new(0, 0, 0), true, 0.6, 0, z)
-		window:_square(dx, dy, dw, dh, window.Theme.Background, true, 1, 8, z + 1)
-		window:_square(dx, dy, dw, dh, window.Theme.Outline, false, 1, 8, z + 2)
+		window:_square(0, 0, vp.X, vp.Y, backdropColor, true, 0.6, 0, z)
+		window:_square(dx, dy, dw, dh, panelColor, true, 1, 8, z + 1)
+		window:_square(dx, dy, dw, dh, panelOutline, false, 1, 8, z + 2)
 
 		local pad = math.floor(12 * scale)
 		local titleY = dy + pad
@@ -428,13 +431,18 @@ function DialogManager:RenderDialogs(window)
 			elseif hovered then
 				btnColor = primary and window.Theme.Accent or window.Theme.Surface2
 			end
+			local outlineColor = btn.Disabled and window.Theme.SoftOutline or (hovered and window.Theme.Outline2 or window.Theme.Outline)
+			local textColor = btn.Disabled and window.Theme.DimText or (primary and Color3.new(1, 1, 1) or (hovered and window.Theme.Text or window.Theme.Muted))
+			local animatedButton = window:_anim(btn, "dialog.button", btnColor, 18)
+			local animatedOutline = window:_anim(btn, "dialog.outline", outlineColor, 18)
+			local animatedText = window:_anim(btn, "dialog.text", textColor, 18)
 
-			window:_square(bx, btnY, bw, btnH, btnColor, true, 1, 5, z + 4)
-			window:_square(bx, btnY, bw, btnH, window.Theme.Outline, false, 1, 5, z + 5)
+			window:_square(bx, btnY, bw, btnH, animatedButton, true, 1, 5, z + 4)
+			window:_square(bx, btnY, bw, btnH, animatedOutline, false, 1, 5, z + 5)
 			window:_text(
 				TM:Fit(btn.Text or "OK", bw - math.floor(12 * scale), 14, window.Theme.Font, scale),
 				bx + math.floor(bw / 2), btnY + math.floor(6 * scale),
-				primary and Color3.new(1, 1, 1) or window.Theme.Text,
+				animatedText,
 				14, Drawing.Fonts.Monospace, true, false, z + 6
 			)
 
@@ -1191,6 +1199,9 @@ end
 function GalaxObsidian:OnUnload(callback)
     self.UnloadCallbacks[#self.UnloadCallbacks + 1] = callback
 end
+local measuredTextWidths = {}
+local textBoundsProbe
+local textBoundsWarningShown = false
 function GalaxObsidian:Unload()
     self.Unloaded = true
     for _, cb in ipairs(self.UnloadCallbacks) do
@@ -1201,12 +1212,48 @@ function GalaxObsidian:Unload()
         self.ActiveWindow:Destroy()
         self.ActiveWindow = nil
     end
+    if textBoundsProbe then
+        textBoundsProbe:Remove()
+        textBoundsProbe = nil
+    end
+    measuredTextWidths = {}
     self.Options = {}
     self.Toggles = {}
 end
 local function estimateTextWidth(text, size, font)
     local scale = GalaxObsidian.ActiveWindow and GalaxObsidian.ActiveWindow:GetScale() or 1.0
     return TextManager:Measure(text, size or GalaxObsidian.FontSize or 14, font or Theme.Font, scale)
+end
+local function measureTextBoundsWidth(text, size, font)
+    local content = tostring(text or "")
+    if content == "" then
+        return 0
+    end
+    local key = tostring(font) .. "\0" .. tostring(size) .. "\0" .. content
+    local cached = measuredTextWidths[key]
+    if cached ~= nil then
+        return cached
+    end
+    local ok, width = pcall(function()
+        if not textBoundsProbe then
+            textBoundsProbe = Drawing.new("Text")
+            textBoundsProbe.Visible = false
+        end
+        textBoundsProbe.Text = content
+        textBoundsProbe.Size = size
+        textBoundsProbe.Font = font
+        local bounds = textBoundsProbe.TextBounds
+        return bounds and bounds.X
+    end)
+    if not ok or type(width) ~= "number" or width <= 0 then
+        width = estimateTextWidth(content, size, font)
+        if not textBoundsWarningShown then
+            textBoundsWarningShown = true
+            warn("[GalaxObsidian] Native TextBounds measurement failed; using the stable font metric fallback!")
+        end
+    end
+    measuredTextWidths[key] = width
+    return width
 end
 local function fitTextToWidth(text, maxWidth, size, font)
     local scale = GalaxObsidian.ActiveWindow and GalaxObsidian.ActiveWindow:GetScale() or 1.0
@@ -1917,11 +1964,7 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "Font", resolvedFont)
         local tx = x
         if center == true then
-            local bounds = object.TextBounds
-            local width = bounds and bounds.X
-            if type(width) ~= "number" or width <= 0 then
-                width = estimateTextWidth(content, size or GalaxObsidian.FontSize or 14, resolvedFont)
-            end
+            local width = measureTextBoundsWidth(content, textSize, resolvedFont)
             tx = tx - width / 2
         end
         local yOffset = scale > 1 and -math.floor((scale - 1) * 3) or 0
