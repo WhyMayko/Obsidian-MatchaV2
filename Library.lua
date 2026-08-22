@@ -4997,7 +4997,7 @@ function GalaxObsidian:CreateWindow(options)
         local width = math.floor(self:_anim(loading, "width", targetWidth, 12))
         local height = math.floor((loading.height or 275) * scale)
         local x = math.floor((viewport.X - width) / 2)
-        local y = math.floor((viewport.Y - height) / 2)
+        local y = math.floor((viewport.Y - height) / 2 + (loading.centerOffsetY or -30))
         local z = 180
         self:_square(0, 0, viewport.X, viewport.Y, Color3.new(0, 0, 0), true, 0.6, 0, z)
         self:_square(x, y, width, height, Theme.Background, true, 1, 8, z + 1)
@@ -6740,6 +6740,7 @@ function GalaxObsidian:CreateLoading(options)
         height = tonumber(options.WindowHeight or options.Height) or 275,
         contentWidth = tonumber(options.ContentWidth) or 450,
         sidebarWidth = tonumber(options.SidebarWidth) or 250,
+        centerOffsetY = tonumber(options.CenterOffsetY) or -30,
         showSidebar = options.ShowSidebar == true,
         loadingIcon = options.LoadingIcon,
         loadingIconColor = options.LoadingIconColor,
@@ -6773,6 +6774,11 @@ function GalaxObsidian:CreateLoading(options)
     function loading:SetWindowHeight(value) self.height = math.max(140, tonumber(value) or self.height) end
     function loading:SetContentWidth(value) self.contentWidth = math.max(280, tonumber(value) or self.contentWidth) end
     function loading:SetSidebarWidth(value) self.sidebarWidth = math.max(140, tonumber(value) or self.sidebarWidth) end
+    function loading:SetCenterOffsetY(value)
+        value = tonumber(value)
+        assert(value, "Loading center offset must be a number!")
+        self.centerOffsetY = value
+    end
     function loading:SetLoadingIcon(value)
         self.loadingIcon = value and tostring(value) or nil
         self.loadingIconData = nil
