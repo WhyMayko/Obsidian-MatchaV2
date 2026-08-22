@@ -382,8 +382,8 @@ function DialogManager:RenderDialogs(window)
 		local dy = math.floor((vp.Y - dh) / 2)
 
 		window:_square(0, 0, vp.X, vp.Y, Color3.new(0, 0, 0), true, 0.6, 0, z)
-		window:_square(dx, dy, dw, dh, Color3.new(0.07, 0.07, 0.12), true, 1, 8, z + 1)
-		window:_square(dx, dy, dw, dh, Color3.new(0.2, 0.2, 0.3), false, 1, 8, z + 2)
+		window:_square(dx, dy, dw, dh, window.Theme.Background, true, 1, 8, z + 1)
+		window:_square(dx, dy, dw, dh, window.Theme.Outline, false, 1, 8, z + 2)
 
 		local pad = math.floor(12 * scale)
 		local titleY = dy + pad
@@ -5073,13 +5073,28 @@ function GalaxObsidian:CreateWindow(options)
 
         local centerX = x + mainWidth / 2
         local tweenTime = loading.loadingIconTweenTime or 1
-        local pulse = tweenTime > 0 and (0.75 + math.abs(((tick() / tweenTime) % 1) - 0.5) * 0.4) or 0.8
-        local loadingIconSize = math.floor((58 + pulse * 4) * scale)
         if loading.loadingIconData then
-            local iconDrawing = self:_image(loading.loadingIconData, centerX - loadingIconSize / 2, y + topHeight + math.floor(25 * scale), loadingIconSize, loadingIconSize, 0, z + 4, pulse)
+            local loadingIconSize = math.floor(62 * scale)
+            local iconDrawing = self:_image(loading.loadingIconData, centerX - loadingIconSize / 2, y + topHeight + math.floor(25 * scale), loadingIconSize, loadingIconSize, 0, z + 4, 0.8)
             if iconDrawing and loading.loadingIconColor then iconDrawing.Color = loading.loadingIconColor end
         else
-            self:_drawIcon(loading.loadingIcon or "loader-circle", centerX, y + topHeight + math.floor(56 * scale), loadingIconSize, true, z + 4)
+            local spinnerY = y + topHeight + math.floor(56 * scale)
+            local segments = 16
+            local radius = math.floor(27 * scale)
+            local thickness = math.max(2, math.floor(3 * scale))
+            local duration = tweenTime > 0 and tweenTime or 1
+            local head = tweenTime > 0 and math.floor((tick() / duration) * segments) % segments or 0
+            local baseColor = loading.loadingIconColor or Theme.Accent
+            for index = 0, segments - 1 do
+                local distance = (head - index) % segments
+                if distance < 12 then
+                    local strength = 1 - distance / 14
+                    local color = Color3.new(baseColor.R * strength, baseColor.G * strength, baseColor.B * strength)
+                    local angleA = index / segments * math.pi * 2 - math.pi / 2
+                    local angleB = (index + 0.68) / segments * math.pi * 2 - math.pi / 2
+                    self:_line(centerX + math.cos(angleA) * radius, spinnerY + math.sin(angleA) * radius, centerX + math.cos(angleB) * radius, spinnerY + math.sin(angleB) * radius, color, thickness, z + 4)
+                end
+            end
         end
         self:_text(fitTextToWidth(loading.message, mainWidth - 50, 18, Theme.Font), centerX, y + topHeight + math.floor(103 * scale) - _yOfs(scale), Theme.Text, 18, Drawing.Fonts.Monospace, true, true, z + 4)
         self:_text(fitTextToWidth(loading.description, mainWidth - 50, 14, Theme.Font), centerX, y + topHeight + math.floor(130 * scale) - _yOfs(scale), Theme.Muted, 14, Drawing.Fonts.Monospace, true, true, z + 4)
@@ -6726,7 +6741,7 @@ function GalaxObsidian:CreateLoading(options)
         contentWidth = tonumber(options.ContentWidth) or 450,
         sidebarWidth = tonumber(options.SidebarWidth) or 250,
         showSidebar = options.ShowSidebar == true,
-        loadingIcon = options.LoadingIcon or "loader-circle",
+        loadingIcon = options.LoadingIcon,
         loadingIconColor = options.LoadingIconColor,
         loadingIconTweenTime = tonumber(options.LoadingIconTweenTime) or 1,
         sidebarItems = {},
@@ -6759,9 +6774,10 @@ function GalaxObsidian:CreateLoading(options)
     function loading:SetContentWidth(value) self.contentWidth = math.max(280, tonumber(value) or self.contentWidth) end
     function loading:SetSidebarWidth(value) self.sidebarWidth = math.max(140, tonumber(value) or self.sidebarWidth) end
     function loading:SetLoadingIcon(value)
-        self.loadingIcon = tostring(value or "loader-circle")
+        self.loadingIcon = value and tostring(value) or nil
         self.loadingIconData = nil
         local resolved = imageUrl(value)
+        if type(value) == "string" and value:match("^[%w%-]+$") and not value:match("^%d+$") then resolved = GalaxObsidian.LucideIconUrl .. value:lower() .. ".png" end
         if resolved then window:_requestImage(resolved, function(data) self.loadingIconData = data end) end
     end
     function loading:SetLoadingIconTweenTime(value) self.loadingIconTweenTime = math.max(0, tonumber(value) or self.loadingIconTweenTime) end
@@ -6796,10 +6812,9 @@ function GalaxObsidian:CreateLoading(options)
     local titleIcon = imageUrl(options.Icon)
     if titleIcon then window:_requestImage(titleIcon, function(data) loading.iconData = data end) end
     local loadingIcon = imageUrl(options.LoadingIcon)
+    if type(options.LoadingIcon) == "string" and options.LoadingIcon:match("^[%w%-]+$") and not options.LoadingIcon:match("^%d+$") then loadingIcon = GalaxObsidian.LucideIconUrl .. options.LoadingIcon:lower() .. ".png" end
     if loadingIcon then
         window:_requestImage(loadingIcon, function(data) loading.loadingIconData = data end)
-    else
-        window:_requestImage(GalaxObsidian.Repo .. "assets/LoadingIcon.png", function(data) loading.loadingIconData = data end)
     end
     return loading
 end

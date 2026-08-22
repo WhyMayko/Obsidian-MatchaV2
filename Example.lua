@@ -39,17 +39,13 @@ local startupLoading = Library:CreateLoading({
     Description = "Preparing interface...",
     CurrentStep = 0,
     TotalSteps = 4,
-    ShowSidebar = true,
+    ShowSidebar = false,
     WindowWidth = 450,
     WindowHeight = 275,
     ContentWidth = 450,
     SidebarWidth = 250,
 })
 
-startupLoading.Sidebar:AddLabel("Obsidian Matcha")
-startupLoading.Sidebar:AddDivider()
-startupLoading.Sidebar:AddValue("Version: v2")
-startupLoading.Sidebar:AddValue("User: " .. tostring(game:GetService("Players").LocalPlayer.Name))
 startupLoading:SetErrorButtons({
     Retry = {
         Title = "Retry",
@@ -502,11 +498,18 @@ task.spawn(function()
         "Ready!",
     }
     for step, description in ipairs(steps) do
+        if step == 2 then
+            startupLoading:ShowSidebarPage(true)
+            startupLoading.Sidebar:AddLabel("Obsidian Matcha")
+            startupLoading.Sidebar:AddDivider()
+            startupLoading.Sidebar:AddValue("Version: v2")
+            startupLoading.Sidebar:AddValue("User: " .. tostring(game:GetService("Players").LocalPlayer.Name))
+        end
         startupLoading:SetDescription(description)
         startupLoading:SetCurrentStep(step)
         task.wait(0.45)
     end
-    startupLoading:Destroy()
+    startupLoading:Continue()
 end)
 
 Library:OnUnload(function()
