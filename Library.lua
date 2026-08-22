@@ -32,6 +32,7 @@ local Theme
 local TextManager = { TextChars = {} }
 local measureProbe
 local glyphWidths = {}
+local textBoundsWidths = {}
 local keyNames = { [1] = "M1", [2] = "M2", [4] = "M3", [8] = "Back", [9] = "Tab", [13] = "Enter", [16] = "Shift", [17] = "Ctrl", [18] = "Alt", [27] = "Esc", [32] = "Space", [33] = "PageUp", [34] = "PageDown", [35] = "End", [36] = "Home", [37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down", [45] = "Insert", [46] = "Delete" }
 for key = 48, 57 do TextManager.TextChars[key] = string.char(key); keyNames[key] = string.char(key) end
 for key = 65, 90 do TextManager.TextChars[key] = string.char(key + 32); keyNames[key] = string.char(key) end
@@ -60,6 +61,27 @@ end
 function TextManager:Measure(text, size, _, scale)
     size = scale and math.floor((size or 13) * scale + 0.5) or (size or 13)
     return #tostring(text or "") * glyphWidth(size)
+end
+function TextManager:MeasureBounds(text, size, font, scale)
+    local content = tostring(text or "")
+    local resolvedSize = scale and math.floor((size or 13) * scale + 0.5) or (size or 13)
+    local resolvedFont = font or Drawing.Fonts.Monospace
+    local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
+    local cached = textBoundsWidths[key]
+    if cached ~= nil then return cached end
+    if not measureProbe then
+        measureProbe = Drawing.new("Text")
+    end
+    measureProbe.Center = false
+    measureProbe.Text = content
+    measureProbe.Size = resolvedSize
+    measureProbe.Font = resolvedFont
+    measureProbe.Position = Vector2.new(-10000, -10000)
+    measureProbe.Visible = false
+    local bounds = measureProbe.TextBounds
+    assert(bounds and type(bounds.X) == "number", "TextBounds must return a Vector2 for centered text!")
+    textBoundsWidths[key] = bounds.X
+    return bounds.X
 end
 function TextManager:Fit(text, maxWidth, size, _, scale)
     text = tostring(text or "")
@@ -1209,6 +1231,12 @@ function GalaxObsidian:Unload()
         self.ActiveWindow:Destroy()
         self.ActiveWindow = nil
     end
+    if measureProbe then
+        measureProbe:Remove()
+        measureProbe = nil
+    end
+    glyphWidths = {}
+    textBoundsWidths = {}
     self.Options = {}
     self.Toggles = {}
 end
@@ -1920,15 +1948,14 @@ function GalaxObsidian:CreateWindow(options)
         local object = self:_get("Text")
         local meta = drawingMeta[object]
         local resolvedFont = GalaxObsidian.Font
-        setDrawingValue(object, meta, "Center", false)
+        local nativeCenter = center == "native"
+        setDrawingValue(object, meta, "Center", nativeCenter)
         setDrawingValue(object, meta, "Text", content)
         setDrawingValue(object, meta, "Size", textSize)
         setDrawingValue(object, meta, "Font", resolvedFont)
         local textX = x
         if center == true then
-            local bounds = object.TextBounds
-            assert(bounds and type(bounds.X) == "number", "TextBounds must return a Vector2 for centered text!")
-            textX = x - bounds.X / 2
+            textX = x - TextManager:MeasureBounds(content, size or GalaxObsidian.FontSize or 14, resolvedFont, scale) / 2
         end
         local yOffset = scale > 1 and -math.floor((scale - 1) * 3) or 0
         setDrawingPosition(object, meta, math.floor(textX + 0.5), math.floor(y + yOffset + 0.5))
@@ -5106,8 +5133,8 @@ function GalaxObsidian:CreateWindow(options)
                 end
             end
         end
-        self:_text(fitTextToWidth(loading.message, mainWidth - 50, 18, Theme.Font), centerX, y + topHeight + math.floor(103 * scale) - _yOfs(scale), Theme.Text, 18, Drawing.Fonts.Monospace, true, false, z + 4)
-        self:_text(fitTextToWidth(loading.description, mainWidth - 50, 14, Theme.Font), centerX, y + topHeight + math.floor(130 * scale) - _yOfs(scale), Theme.Muted, 14, Drawing.Fonts.Monospace, true, false, z + 4)
+        self:_text(fitTextToWidth(loading.message, mainWidth - 50, 18, Theme.Font), centerX, y + topHeight + math.floor(103 * scale) - _yOfs(scale), Theme.Text, 18, Drawing.Fonts.Monospace, "native", false, z + 4)
+        self:_text(fitTextToWidth(loading.description, mainWidth - 50, 14, Theme.Font), centerX, y + topHeight + math.floor(130 * scale) - _yOfs(scale), Theme.Muted, 14, Drawing.Fonts.Monospace, "native", false, z + 4)
         local total = math.max(1, tonumber(loading.totalSteps) or 1)
         local current = clamp(tonumber(loading.currentStep) or 0, 0, total)
         local barW = math.floor(mainWidth * 0.7)
@@ -5117,7 +5144,7 @@ function GalaxObsidian:CreateWindow(options)
         self:_square(barX, barY, barW, barH, Theme.Main, true, 1, 4, z + 3)
         local progress = self:_anim(loading, "progress", current / total, 10)
         self:_square(barX, barY, math.floor(barW * progress), barH, Theme.Accent, true, 1, 4, z + 4)
-        self:_text(tostring(current) .. "/" .. tostring(total), centerX, barY + math.floor(1 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, true, true, z + 5)
+        self:_text(tostring(current) .. "/" .. tostring(total), centerX, barY + math.floor(1 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, "native", true, z + 5)
     end
 
     function Window:_renderTooltip()
