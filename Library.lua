@@ -5014,7 +5014,7 @@ function GalaxObsidian:CreateWindow(options)
             self:_image(self.IconData, titleX, y + math.floor(10 * scale), titleIconSize, titleIconSize, 4, z + 4, 0.8)
             titleX = titleX + titleIconSize + math.floor(7 * scale)
         end
-        self:_text(fitTextToWidth(loading.title, mainWidth - titleX + x - 12, 20, Theme.Font), titleX, y + math.floor(14 * scale) - _yOfs(scale), Theme.Text, 20, Drawing.Fonts.Monospace, false, true, z + 4)
+        self:_text(fitTextToWidth(loading.title, mainWidth - titleX + x - 12, 20, Theme.Font), titleX, y + math.floor(14 * scale) - _yOfs(scale), Theme.Text, 20, Drawing.Fonts.Monospace, false, false, z + 4)
 
         if loading.showSidebar and width > mainWidth + math.floor(20 * scale) then
             local sidebarX = x + mainWidth
@@ -5029,7 +5029,7 @@ function GalaxObsidian:CreateWindow(options)
                         local rowHeight = math.floor(27 * scale)
                         local hovered = item.kind == "button" and self:_over(sidebarX + 10, itemY, width - mainWidth - 20, rowHeight)
                         if hovered then self:_square(sidebarX + 10, itemY, width - mainWidth - 20, rowHeight, Theme.PopupHover, true, 1, 4, z + 3) end
-                        self:_text(fitTextToWidth(item.text, width - mainWidth - math.floor(28 * scale), 14, Theme.Font), sidebarX + math.floor(14 * scale), itemY + math.floor(6 * scale) - _yOfs(scale), item.kind == "value" and Theme.Muted or Theme.Text, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+                        self:_text(fitTextToWidth(item.text, width - mainWidth - math.floor(28 * scale), 14, Theme.Font), sidebarX + math.floor(14 * scale), itemY + math.floor(6 * scale) - _yOfs(scale), item.kind == "value" and Theme.Muted or Theme.Text, 14, Drawing.Fonts.Monospace, false, false, z + 4)
                         if hovered and self:_click(sidebarX + 10, itemY, width - mainWidth - 20, rowHeight, item) and type(item.callback) == "function" then pcall(item.callback, loading, item) end
                         itemY = itemY + rowHeight + math.floor(4 * scale)
                     end
@@ -5039,10 +5039,10 @@ function GalaxObsidian:CreateWindow(options)
 
         if loading.isError then
             local pad = math.floor(15 * scale)
-            self:_text("Error", x + pad, y + topHeight + pad, Theme.Red, 18, Drawing.Fonts.Monospace, false, true, z + 4)
+            self:_text("Error", x + pad, y + topHeight + pad, Theme.Red, 18, Drawing.Fonts.Monospace, false, false, z + 4)
             local errorLines = wrapTextLines(loading.errorMessage or "Unknown error", mainWidth - pad * 2, 14, 8, Theme.Font)
             for index, line in ipairs(errorLines) do
-                self:_text(line, x + pad, y + topHeight + math.floor(43 * scale) + (index - 1) * math.floor(17 * scale), Theme.Muted, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+                self:_text(line, x + pad, y + topHeight + math.floor(43 * scale) + (index - 1) * math.floor(17 * scale), Theme.Muted, 14, Drawing.Fonts.Monospace, false, false, z + 4)
             end
             local buttons = loading.errorButtons or {}
             local buttonHeight = math.floor(27 * scale)
@@ -5064,7 +5064,7 @@ function GalaxObsidian:CreateWindow(options)
                 self:_square(buttonX, buttonY, buttonWidth, buttonHeight, color, true, 1, 5, z + 4)
                 self:_square(buttonX, buttonY, buttonWidth, buttonHeight, Theme.Outline, false, 1, 5, z + 5)
                 local textColor = button.variant == "Primary" and Theme.Background or Theme.Text
-                self:_text(button.title, buttonX + buttonWidth / 2, buttonY + math.floor(6 * scale) - _yOfs(scale), textColor, 14, Drawing.Fonts.Monospace, true, true, z + 6)
+                self:_text(button.title, buttonX + buttonWidth / 2, buttonY + math.floor(6 * scale) - _yOfs(scale), textColor, 14, Drawing.Fonts.Monospace, true, false, z + 6)
                 if hovered and self:_click(buttonX, buttonY, buttonWidth, buttonHeight, button) and type(button.callback) == "function" then pcall(button.callback, loading) end
                 buttonX = buttonX + buttonWidth + gap
             end
@@ -5096,8 +5096,8 @@ function GalaxObsidian:CreateWindow(options)
                 end
             end
         end
-        self:_text(fitTextToWidth(loading.message, mainWidth - 50, 18, Theme.Font), centerX, y + topHeight + math.floor(103 * scale) - _yOfs(scale), Theme.Text, 18, Drawing.Fonts.Monospace, true, true, z + 4)
-        self:_text(fitTextToWidth(loading.description, mainWidth - 50, 14, Theme.Font), centerX, y + topHeight + math.floor(130 * scale) - _yOfs(scale), Theme.Muted, 14, Drawing.Fonts.Monospace, true, true, z + 4)
+        self:_text(fitTextToWidth(loading.message, mainWidth - 50, 18, Theme.Font), centerX, y + topHeight + math.floor(103 * scale) - _yOfs(scale), Theme.Text, 18, Drawing.Fonts.Monospace, true, false, z + 4)
+        self:_text(fitTextToWidth(loading.description, mainWidth - 50, 14, Theme.Font), centerX, y + topHeight + math.floor(130 * scale) - _yOfs(scale), Theme.Muted, 14, Drawing.Fonts.Monospace, true, false, z + 4)
         local total = math.max(1, tonumber(loading.totalSteps) or 1)
         local current = clamp(tonumber(loading.currentStep) or 0, 0, total)
         local barW = math.floor(mainWidth * 0.7)
