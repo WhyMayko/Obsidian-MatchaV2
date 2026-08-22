@@ -24,12 +24,12 @@ function EssentialsManager:BuildSection(tab)
 		end,
 	})
 
-	MenuGroup:AddToggle("BlockGameInput", {
+	MenuGroup:AddToggle("Input", {
 		Default = true,
-		Text = "Block Game Input",
+		Text = "Input",
 		Callback = function(Value)
 			if not Library.ActiveWindow then
-				error("EssentialsManager: no active window for BlockGameInput!", 2)
+				error("EssentialsManager: no active window for Input!", 2)
 			end
 			Library.ActiveWindow:SetInputBlocking(Value)
 		end,
