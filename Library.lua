@@ -1698,6 +1698,7 @@ function GalaxObsidian:CreateWindow(options)
         SearchFocused = false,
         ShowSearch = options.ShowSearch ~= false,
         ShowKeybindMenu = options.ShowKeybindMenu == true,
+        BlockRobloxInput = options.BlockRobloxInput ~= false,
         KeybindMenuX = options.KeybindMenuX or keybindMenuOptions.X,
         KeybindMenuY = options.KeybindMenuY or keybindMenuOptions.Y,
         KeybindMenuWidth = options.KeybindMenuWidth or keybindMenuOptions.Width,
@@ -2241,7 +2242,7 @@ function GalaxObsidian:CreateWindow(options)
         return false
     end
     function Window:_updateInputBlock()
-        local shouldBlock = self.Open == true
+        local shouldBlock = self.Open == true and self.BlockRobloxInput ~= false
         if shouldBlock == self.LastRobloxInputBlocked then
             return nil
         end
@@ -5702,6 +5703,10 @@ function GalaxObsidian:CreateWindow(options)
         if toggle and toggle.Widget then
             toggle.Widget.value = self.ShowKeybindMenu
         end
+    end
+    function Window:SetInputBlocking(state)
+        self.BlockRobloxInput = state ~= false
+        self:_updateInputBlock()
     end
     function Window:SetKeybindMenuPosition(x, y)
         self.KeybindMenuX = x
