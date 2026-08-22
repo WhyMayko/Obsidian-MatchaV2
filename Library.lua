@@ -1923,12 +1923,17 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "Text", content)
         setDrawingValue(object, meta, "Size", textSize)
         setDrawingValue(object, meta, "Font", resolvedFont)
+        local textX = x
+        if center == true then
+            local textWidth = TextManager:Measure(content, size or GalaxObsidian.FontSize or 14, resolvedFont, scale)
+            textX = x - textWidth / 2
+        end
         local yOffset = scale > 1 and -math.floor((scale - 1) * 3) or 0
-        setDrawingPosition(object, meta, math.floor(x + 0.5), math.floor(y + yOffset + 0.5))
+        setDrawingPosition(object, meta, math.floor(textX + 0.5), math.floor(y + yOffset + 0.5))
         if color then
             setDrawingValue(object, meta, "Color", color)
         end
-        setDrawingValue(object, meta, "Center", center == true)
+        setDrawingValue(object, meta, "Center", false)
         setDrawingValue(object, meta, "Outline", outline == true)
         setDrawingValue(object, meta, "Transparency", 1)
         setDrawingValue(object, meta, "ZIndex", z or 5)
