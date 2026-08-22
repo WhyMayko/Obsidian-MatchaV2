@@ -5144,7 +5144,7 @@ function GalaxObsidian:CreateWindow(options)
         self:_square(barX, barY, barW, barH, Theme.Main, true, 1, 4, z + 3)
         local progress = self:_anim(loading, "progress", current / total, 10)
         self:_square(barX, barY, math.floor(barW * progress), barH, Theme.Accent, true, 1, 4, z + 4)
-        self:_text(tostring(current) .. "/" .. tostring(total), centerX, barY + math.floor(1 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, "native", true, z + 5)
+        self:_text(tostring(current) .. "/" .. tostring(total), centerX, barY + math.floor(1 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, true, true, z + 5)
     end
 
     function Window:_renderTooltip()
