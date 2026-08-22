@@ -5216,6 +5216,11 @@ function GalaxObsidian:CreateWindow(options)
         self._renderingMainWindow = false
         self.BlockClicks = false
         self.TooltipText = nil
+        if self.LoadingOverlay and not self.LoadingOverlay.closed then
+            self:_renderLoading()
+            self:_hideUnused()
+            return nil
+        end
         if not self.Open then
             self:_renderKeybindMenu()
             self:_renderKeybindModePopup()
