@@ -33,7 +33,7 @@ local TextManager = { TextChars = {} }
 local measureProbe
 local glyphWidths = {}
 local textBoundsWidths = {}
-local keyNames = { [1] = "M1", [2] = "M2", [4] = "M3", [8] = "Back", [9] = "Tab", [13] = "Enter", [16] = "Shift", [17] = "Ctrl", [18] = "Alt", [27] = "Esc", [32] = "Space", [33] = "PageUp", [34] = "PageDown", [35] = "End", [36] = "Home", [37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down", [45] = "Insert", [46] = "Delete" }
+local keyNames = { [1] = "M1", [2] = "M2", [3] = "Cancel", [4] = "M3", [5] = "M4", [6] = "M5", [8] = "Back", [9] = "Tab", [13] = "Enter", [16] = "Shift", [17] = "Ctrl", [18] = "Alt", [27] = "Esc", [32] = "Space", [33] = "PageUp", [34] = "PageDown", [35] = "End", [36] = "Home", [37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down", [45] = "Insert", [46] = "Delete" }
 for key = 48, 57 do TextManager.TextChars[key] = string.char(key); keyNames[key] = string.char(key) end
 for key = 65, 90 do TextManager.TextChars[key] = string.char(key + 32); keyNames[key] = string.char(key) end
 local function glyphWidth(size)
@@ -96,6 +96,7 @@ end
 function TextManager:KeyName(key)
     local number = tonumber(key)
     if not number then return tostring(key or "None") end
+    if number < 1 or number > 255 then return "None" end
     if number >= 112 and number <= 135 then return "F" .. tostring(number - 111) end
     return keyNames[number] or string.format("0x%02X", number)
 end
@@ -1404,12 +1405,12 @@ local function keyCodeFromName(key)
         return nil
     end
     if type(key) == "number" then
-        return key
+        return key >= 1 and key <= 255 and key or nil
     end
     local text = tostring(key)
     local numberKey = tonumber(text)
     if numberKey then
-        return numberKey
+        return numberKey >= 1 and numberKey <= 255 and numberKey or nil
     end
     local upper = text:upper():gsub("%s+", "")
     if KeyAliasMap[upper] then
@@ -2370,8 +2371,16 @@ function GalaxObsidian:CreateWindow(options)
         if self.Mouse5Clicked then
             return 6
         end
-        for key = 7, 255 do
-            if self:_keyPressed(key) then
+        if tick() - self.KeyListenStarted > 0.15 then
+            if self.Mouse1Clicked then
+                return 1
+            end
+            if self.Mouse2Clicked then
+                return 2
+            end
+        end
+        for key = 3, 255 do
+            if key ~= 4 and key ~= 5 and key ~= 6 and self:_keyPressed(key) then
                 return key
             end
         end
