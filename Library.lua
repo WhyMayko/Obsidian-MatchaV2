@@ -1199,9 +1199,6 @@ end
 function GalaxObsidian:OnUnload(callback)
     self.UnloadCallbacks[#self.UnloadCallbacks + 1] = callback
 end
-local measuredTextWidths = {}
-local textBoundsProbe
-local textBoundsWarningShown = false
 function GalaxObsidian:Unload()
     self.Unloaded = true
     for _, cb in ipairs(self.UnloadCallbacks) do
@@ -1212,48 +1209,12 @@ function GalaxObsidian:Unload()
         self.ActiveWindow:Destroy()
         self.ActiveWindow = nil
     end
-    if textBoundsProbe then
-        textBoundsProbe:Remove()
-        textBoundsProbe = nil
-    end
-    measuredTextWidths = {}
     self.Options = {}
     self.Toggles = {}
 end
 local function estimateTextWidth(text, size, font)
     local scale = GalaxObsidian.ActiveWindow and GalaxObsidian.ActiveWindow:GetScale() or 1.0
     return TextManager:Measure(text, size or GalaxObsidian.FontSize or 14, font or Theme.Font, scale)
-end
-local function measureTextBoundsWidth(text, size, font)
-    local content = tostring(text or "")
-    if content == "" then
-        return 0
-    end
-    local key = tostring(font) .. "\0" .. tostring(size) .. "\0" .. content
-    local cached = measuredTextWidths[key]
-    if cached ~= nil then
-        return cached
-    end
-    local ok, width = pcall(function()
-        if not textBoundsProbe then
-            textBoundsProbe = Drawing.new("Text")
-            textBoundsProbe.Visible = false
-        end
-        textBoundsProbe.Text = content
-        textBoundsProbe.Size = size
-        textBoundsProbe.Font = font
-        local bounds = textBoundsProbe.TextBounds
-        return bounds and bounds.X
-    end)
-    if not ok or type(width) ~= "number" or width <= 0 then
-        width = estimateTextWidth(content, size, font)
-        if not textBoundsWarningShown then
-            textBoundsWarningShown = true
-            warn("[GalaxObsidian] Native TextBounds measurement failed; using the stable font metric fallback!")
-        end
-    end
-    measuredTextWidths[key] = width
-    return width
 end
 local function fitTextToWidth(text, maxWidth, size, font)
     local scale = GalaxObsidian.ActiveWindow and GalaxObsidian.ActiveWindow:GetScale() or 1.0
@@ -1962,17 +1923,12 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "Text", content)
         setDrawingValue(object, meta, "Size", textSize)
         setDrawingValue(object, meta, "Font", resolvedFont)
-        local tx = x
-        if center == true then
-            local width = measureTextBoundsWidth(content, textSize, resolvedFont)
-            tx = tx - width / 2
-        end
         local yOffset = scale > 1 and -math.floor((scale - 1) * 3) or 0
-        setDrawingPosition(object, meta, math.floor(tx + 0.5), math.floor(y + yOffset + 0.5))
+        setDrawingPosition(object, meta, math.floor(x + 0.5), math.floor(y + yOffset + 0.5))
         if color then
             setDrawingValue(object, meta, "Color", color)
         end
-        setDrawingValue(object, meta, "Center", false)
+        setDrawingValue(object, meta, "Center", center == true)
         setDrawingValue(object, meta, "Outline", outline == true)
         setDrawingValue(object, meta, "Transparency", 1)
         setDrawingValue(object, meta, "ZIndex", z or 5)
