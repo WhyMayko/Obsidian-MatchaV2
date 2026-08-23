@@ -117,16 +117,17 @@ end
 function TextManager:RenderInput(window, value, placeholder, x, y, width, options)
     options = options or {}
     local empty = value == nil or value == ""
-    local text = empty and tostring(placeholder or "") or tostring(value)
+    local showPlaceholder = empty and options.ShowPlaceholderWhenFocused ~= false
+    local text = showPlaceholder and tostring(placeholder or "") or (empty and "" or tostring(value))
     local size = options.Size or 13
     local fitted = self:Fit(text, width, size, nil, window:GetScale())
-    local color = options.Disabled and options.DisabledColor or (empty and options.PlaceholderColor or options.Color)
+    local color = options.Disabled and options.DisabledColor or (showPlaceholder and options.PlaceholderColor or options.Color)
     local textWidth = self:Measure(fitted, size, nil, window:GetScale())
     local align = tostring(options.Align or options.align or "Left"):lower()
     local tx = align == "right" and x + width - textWidth or (align == "center" or align == "centre") and x + (width - textWidth) / 2 or x
     window:_text(fitted, tx, y, color, size, Drawing.Fonts.Monospace, false, options.Outline ~= false, options.ZIndex or 1)
     if options.Focused and not options.Disabled and math.floor(tick() * 2) % 2 == 0 then
-        local caretX = tx + math.min(width, textWidth + 2)
+        local caretX = tx + math.min(width, empty and 2 or textWidth + 2)
         local caretH = math.floor(size * window:GetScale() + 0.5)
         window:_line(caretX, y + 1, caretX, y + caretH + 1, color, 1, (options.ZIndex or 1) + 1)
     end
@@ -2515,6 +2516,7 @@ function GalaxObsidian:CreateWindow(options)
                 Outline = outline ~= false,
                 Align = align,
                 ZIndex = z,
+                ShowPlaceholderWhenFocused = not focused,
             }
         )
     end
@@ -3621,7 +3623,8 @@ function GalaxObsidian:CreateWindow(options)
         local scale = self:GetScale()
         local boxY = y + math.floor(18 * scale)
         local boxH = math.floor(21 * scale)
-        local textY = y + math.floor(22 * scale)
+        local textSize = 14
+        local textY = boxY + math.floor((boxH - math.floor(textSize * scale + 0.5)) / 2) - _yOfs(scale)
         local focused = self.TextTarget == widget
         local disabled = widget.disabled == true
         widget.hitbox = { x = x, y = boxY, w = w, h = boxH }
@@ -3639,7 +3642,7 @@ function GalaxObsidian:CreateWindow(options)
             x,
             y + math.floor(2 * scale),
             Theme.Text,
-            14,
+            textSize,
             Drawing.Fonts.Monospace,
             false,
             true,
@@ -3657,7 +3660,7 @@ function GalaxObsidian:CreateWindow(options)
             focused,
             disabled,
             z + 3,
-            true
+            false
         )
         if not disabled and self:_focusClick(x, boxY, w, boxH, widget) then
             if not focused then
