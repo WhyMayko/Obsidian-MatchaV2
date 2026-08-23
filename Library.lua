@@ -38,68 +38,64 @@ local Layers = {
 }
 
 local TextManager = { TextChars = {} }
-local measureProbe
-local glyphWidths = {}
+local measureProbes = {}
 local textBoundsWidths = {}
 local keyNames = { [1] = "M1", [2] = "M2", [3] = "Cancel", [4] = "M3", [5] = "M4", [6] = "M5", [8] = "Back", [9] = "Tab", [13] = "Enter", [16] = "Shift", [17] = "Ctrl", [18] = "Alt", [27] = "Esc", [32] = "Space", [33] = "PageUp", [34] = "PageDown", [35] = "End", [36] = "Home", [37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down", [45] = "Insert", [46] = "Delete" }
 for key = 48, 57 do TextManager.TextChars[key] = string.char(key); keyNames[key] = string.char(key) end
 for key = 65, 90 do TextManager.TextChars[key] = string.char(key + 32); keyNames[key] = string.char(key) end
-local function glyphWidth(size)
-    size = math.max(1, math.floor(tonumber(size) or 13))
-    if glyphWidths[size] then return glyphWidths[size] end
-    if not measureProbe then
-        local ok, probe = pcall(Drawing.new, "Text")
-        if ok then measureProbe = probe end
-    end
-    if measureProbe then
-        measureProbe.Text = "M"
-        measureProbe.Size = size
-        measureProbe.Font = Drawing.Fonts.Monospace
-        measureProbe.Position = Vector2.new(-10000, -10000)
-        measureProbe.Visible = true
-        local bounds = measureProbe.TextBounds
-        if bounds and bounds.X and bounds.X > 0 then
-            glyphWidths[size] = bounds.X
-            return bounds.X
-        end
-    end
-    glyphWidths[size] = size * 0.6
-    return glyphWidths[size]
+local function resolvedTextSize(size, scale)
+    return math.max(1, scale and math.floor((size or 13) * scale + 0.5) or math.floor(size or 13))
 end
-function TextManager:Measure(text, size, _, scale)
-    size = scale and math.floor((size or 13) * scale + 0.5) or (size or 13)
-    return #tostring(text or "") * glyphWidth(size)
+local function getMeasureProbe(font)
+    local resolvedFont = font or Drawing.Fonts.Monospace
+    local key = tostring(resolvedFont)
+    local probe = measureProbes[key]
+    if probe then return probe end
+    probe = Drawing.new("Text")
+    assert(probe, "TextBounds probe could not be created!")
+    probe.Center = false
+    probe.Size = 14
+    probe.Font = resolvedFont
+    probe.Position = Vector2.new(-10000, -10000)
+    probe.Visible = false
+    measureProbes[key] = probe
+    return probe
 end
 function TextManager:MeasureBounds(text, size, font, scale)
     local content = tostring(text or "")
-    local resolvedSize = scale and math.floor((size or 13) * scale + 0.5) or (size or 13)
+    local resolvedSize = resolvedTextSize(size, scale)
     local resolvedFont = font or Drawing.Fonts.Monospace
-    local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
+    local key = tostring(resolvedFont) .. "\0" .. content
     local cached = textBoundsWidths[key]
-    if cached ~= nil then return cached end
-    if not measureProbe then
-        measureProbe = Drawing.new("Text")
+    if cached == nil then
+        local probe = getMeasureProbe(resolvedFont)
+        probe.Text = content
+        local bounds = probe.TextBounds
+        assert(bounds and type(bounds.X) == "number", "TextBounds must return a Vector2!")
+        cached = bounds.X
+        textBoundsWidths[key] = cached
     end
-    measureProbe.Center = false
-    measureProbe.Text = content
-    measureProbe.Size = resolvedSize
-    measureProbe.Font = resolvedFont
-    measureProbe.Position = Vector2.new(-10000, -10000)
-    measureProbe.Visible = false
-    local bounds = measureProbe.TextBounds
-    assert(bounds and type(bounds.X) == "number", "TextBounds must return a Vector2 for centered text!")
-    textBoundsWidths[key] = bounds.X
-    return bounds.X
+    return cached * resolvedSize / 14
 end
-function TextManager:Fit(text, maxWidth, size, _, scale)
+function TextManager:Measure(text, size, font, scale)
+    return self:MeasureBounds(text, size, font, scale)
+end
+function TextManager:Fit(text, maxWidth, size, font, scale)
     text = tostring(text or "")
     if not maxWidth or maxWidth <= 0 then return "" end
-    size = scale and math.floor((size or 13) * scale + 0.5) or (size or 13)
-    local width = glyphWidth(size)
-    if #text * width <= maxWidth then return text end
+    if self:MeasureBounds(text, size, font, scale) <= maxWidth then return text end
     local suffix = "..."
-    local count = math.max(0, math.floor(maxWidth / width) - #suffix)
-    return text:sub(1, count) .. suffix
+    if self:MeasureBounds(suffix, size, font, scale) > maxWidth then return "" end
+    local low, high = 0, #text
+    while low < high do
+        local middle = math.ceil((low + high) / 2)
+        if self:MeasureBounds(text:sub(1, middle) .. suffix, size, font, scale) <= maxWidth then
+            low = middle
+        else
+            high = middle - 1
+        end
+    end
+    return text:sub(1, low) .. suffix
 end
 function TextManager:KeyName(key)
     local number = tonumber(key)
@@ -1261,11 +1257,10 @@ function GalaxObsidian:Unload()
         self.ActiveWindow:Destroy()
         self.ActiveWindow = nil
     end
-    if measureProbe then
-        measureProbe:Remove()
-        measureProbe = nil
+    for key, probe in pairs(measureProbes) do
+        probe:Remove()
+        measureProbes[key] = nil
     end
-    glyphWidths = {}
     textBoundsWidths = {}
     self.Options = {}
     self.Toggles = {}
