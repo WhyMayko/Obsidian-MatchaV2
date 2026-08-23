@@ -28,6 +28,14 @@ GalaxObsidian.ShowToggleFrameInKeybinds = true
 GalaxObsidian.Font = Drawing.Fonts.Monospace
 
 local Theme
+local Layers = {
+    Window = 100,
+    Popup = 200,
+    Notification = 300,
+    Dialog = 400,
+    Loading = 600,
+    Tooltip = 350,
+}
 
 local TextManager = { TextChars = {} }
 local measureProbe
@@ -298,9 +306,13 @@ function DialogManager:Dialog(options)
 
 	win.Dialogs = win.Dialogs or {}
 	win.Dialogs[#win.Dialogs + 1] = dialog
+	if win._activateModal then
+		win:_activateModal(dialog)
+	end
 
 	function dialog:Destroy()
 		self.closed = true
+		if win.InputFocus == self then win.InputFocus = nil end
 	end
 
 	function dialog:SetTitle(text)
@@ -383,8 +395,6 @@ function DialogManager:RenderDialogs(window)
 	local scale = window:GetScale()
 	local cam = workspace.CurrentCamera
 	local vp = cam and cam.ViewportSize or Vector2.new(1920, 1080)
-	local z = 200
-
 	for i = #window.Dialogs, 1, -1 do
 		local dialog = window.Dialogs[i]
 		if dialog.closed then
@@ -396,7 +406,17 @@ function DialogManager:RenderDialogs(window)
 		end
 	end
 
-	for _, dialog in ipairs(window.Dialogs) do
+	local topDialog = window.Dialogs[#window.Dialogs]
+	if not topDialog then
+		window.ModalOwner = nil
+		if window.InputFocus and window.InputFocus.closed then window.InputFocus = nil end
+		return nil
+	end
+	window.ModalOwner = topDialog
+	window.InputFocus = topDialog
+
+	for dialogIndex, dialog in ipairs(window.Dialogs) do
+		local z = Layers.Dialog + (dialogIndex - 1) * 16
 		table.sort(dialog.buttons, function(left, right)
 			return (left.Order or 0) < (right.Order or 0)
 		end)
@@ -440,7 +460,10 @@ function DialogManager:RenderDialogs(window)
 		end
 
 		local btnStartX = dx + math.floor((dw - totalBtnW) / 2)
-		window:_releaseInteraction(nil, true)
+		if dialog == topDialog and window.Mouse1Clicked and not window:_over(dx, dy, dw, dh) then
+			if dialog.closable then dialog:Destroy() end
+			window.Mouse1Clicked = false
+		end
 		for i, btn in ipairs(dialog.buttons) do
 			local bx = btnStartX
 			for j = 1, i - 1 do
@@ -452,7 +475,7 @@ function DialogManager:RenderDialogs(window)
 			local destructive = variant == "Destructive"
 			local ghost = variant == "Ghost"
 			local btnColor = destructive and Color3.fromRGB(210, 50, 65) or (primary and window.Theme.Text or (ghost and window.Theme.Background or window.Theme.Surface))
-			local hovered = window:_over(bx, btnY, bw, btnH)
+			local hovered = window:_hover(bx, btnY, bw, btnH, dialog)
 			if btn.Disabled then
 				btnColor = window.Theme.Main
 			elseif hovered then
@@ -472,7 +495,7 @@ function DialogManager:RenderDialogs(window)
 				14, Drawing.Fonts.Monospace, true, false, z + 6
 			)
 
-			if not btn.Disabled and hovered and window:_click(bx, btnY, bw, btnH, dialog) then
+			if dialog == topDialog and not btn.Disabled and hovered and window:_click(bx, btnY, bw, btnH, dialog) then
 				if btn.Callback then
 					local ok, err = pcall(btn.Callback, dialog)
 					if not ok then error("DialogManager btn.Callback: " .. tostring(err), 2) end
@@ -655,17 +678,19 @@ function NotificationManager:RenderNotifications(window)
 		local safeDuration = math.max(notif.duration, 0.001)
 		local remaining = clamp((notif.expires - now) / safeDuration, 0, 1)
 
-		local over = window:_over(x, y, currentNotifW, notifH)
-		if over and not window.BlockClicks and window.Mouse1Clicked then
+		notif.hitbox = { x = x, y = y, w = currentNotifW, h = notifH }
+		local over = window:_hover(x, y, currentNotifW, notifH, notif)
+		if over and window.Mouse1Clicked then
 			if notif._onClick then
 				local ok, err = pcall(notif._onClick)
 				if not ok then error("NotificationManager _onClick: " .. tostring(err), 2) end
 				notif._onDismiss = nil
 			end
+			window.Mouse1Clicked = false
 		end
 
-		window:_square(x, y, currentNotifW, notifH, window.Theme.Background, true, 1, 7, 140)
-		window:_square(x, y, currentNotifW, notifH, window.Theme.SoftOutline, false, 1, 7, 141)
+		window:_square(x, y, currentNotifW, notifH, window.Theme.Background, true, 1, 7, Layers.Notification)
+		window:_square(x, y, currentNotifW, notifH, window.Theme.SoftOutline, false, 1, 7, Layers.Notification + 1)
 		for lineIndex, line in ipairs(lines) do
 			window:_text(
 				line,
@@ -676,11 +701,11 @@ function NotificationManager:RenderNotifications(window)
 				Drawing.Fonts.Monospace,
 				false,
 				false,
-				143
+				Layers.Notification + 3
 			)
 		end
-		window:_square(x + math.floor(8 * scale), y + notifH - math.floor(6 * scale), currentNotifW - math.floor(16 * scale), math.floor(2 * scale), window.Theme.Main, true, 1, 1, 142)
-		window:_square(x + math.floor(8 * scale), y + notifH - math.floor(6 * scale), (currentNotifW - math.floor(16 * scale)) * remaining, math.floor(2 * scale), window.Accent, true, 1, 1, 144)
+		window:_square(x + math.floor(8 * scale), y + notifH - math.floor(6 * scale), currentNotifW - math.floor(16 * scale), math.floor(2 * scale), window.Theme.Main, true, 1, 1, Layers.Notification + 2)
+		window:_square(x + math.floor(8 * scale), y + notifH - math.floor(6 * scale), (currentNotifW - math.floor(16 * scale)) * remaining, math.floor(2 * scale), window.Accent, true, 1, 1, Layers.Notification + 4)
 		stackY = stackY + notifH + math.floor(10 * scale)
 	end
 end
@@ -1746,7 +1771,8 @@ function GalaxObsidian:CreateWindow(options)
         TextTarget = nil,
         DropdownSearch = nil,
         TooltipText = nil,
-        _focus = nil,
+        InputFocus = nil,
+        ModalOwner = nil,
         KeybindMenuDrag = nil,
         DraggableLabels = {},
         DraggableButtons = {},
@@ -1922,6 +1948,9 @@ function GalaxObsidian:CreateWindow(options)
         local bottom = math.max(y1 or 0, y2 or 0)
         return top >= self._clipTop and bottom <= self._clipBottom
     end
+    function Window:_zIndex(z, default)
+        return (z or default) + (self._renderingMainWindow and Layers.Window or 0)
+    end
 
     function Window:_square(x, y, w, h, color, filled, transparency, corner, z)
         if not w or not h or w <= 0 or h <= 0 then
@@ -1940,7 +1969,7 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "Filled", filled ~= false)
         setDrawingValue(object, meta, "Corner", corner or 0)
         setDrawingValue(object, meta, "Transparency", transparency or 1)
-        setDrawingValue(object, meta, "ZIndex", z or 1)
+        setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 1))
         return object
     end
     function Window:_text(text, x, y, color, size, font, center, outline, z)
@@ -1969,7 +1998,7 @@ function GalaxObsidian:CreateWindow(options)
         end
         setDrawingValue(object, meta, "Outline", outline == true)
         setDrawingValue(object, meta, "Transparency", 1)
-        setDrawingValue(object, meta, "ZIndex", z or 5)
+        setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 5))
         return object
     end
 
@@ -1985,7 +2014,7 @@ function GalaxObsidian:CreateWindow(options)
         end
         setDrawingValue(object, meta, "Thickness", thickness or 1)
         setDrawingValue(object, meta, "Transparency", 1)
-        setDrawingValue(object, meta, "ZIndex", z or 4)
+        setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 4))
         return object
     end
     function Window:_circle(x, y, radius, color, filled, thickness, z)
@@ -2006,7 +2035,7 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "Thickness", thickness or 1)
         setDrawingValue(object, meta, "NumSides", 24)
         setDrawingValue(object, meta, "Transparency", 1)
-        setDrawingValue(object, meta, "ZIndex", z or 5)
+        setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 5))
         return object
     end
 
@@ -2030,7 +2059,7 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingSize(object, meta, w, h)
         setDrawingValue(object, meta, "Rounding", rounding or 0)
         setDrawingValue(object, meta, "Transparency", transparency or 1)
-        setDrawingValue(object, meta, "ZIndex", z or 6)
+        setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 6))
         return object
     end
 
@@ -2095,16 +2124,20 @@ function GalaxObsidian:CreateWindow(options)
         return self:_clampToViewport(x, y, w, h, margin, screenOnly)
     end
 
-    function Window:MouseFocus(owner)
+    function Window:SetInputFocus(owner)
         if owner == nil then
-            return self._focus
+            return self.InputFocus
         end
         if owner == false then
-            if self._focus then
-                self._focus = nil
+            if self.InputFocus then
+                self.InputFocus = nil
                 self.Mouse1Clicked = false
             end
             return nil
+        end
+        local modal = self:_topDialog()
+        if modal and owner ~= modal then
+            return false
         end
         if self.DropdownTarget and owner ~= self.DropdownTarget then
             return false
@@ -2115,18 +2148,65 @@ function GalaxObsidian:CreateWindow(options)
         if self.KeybindModeTarget and owner ~= self.KeybindModeTarget then
             return false
         end
-        if self._focus and self._focus ~= owner then
+        if self.InputFocus and self.InputFocus ~= owner then
             return false
         end
-        self._focus = owner
+        self.InputFocus = owner
         self.Mouse1Clicked = false
         return true
+    end
+    function Window:MouseFocus(owner)
+        return self:SetInputFocus(owner)
+    end
+    function Window:_topDialog()
+        local dialogs = self.Dialogs
+        if not dialogs then return nil end
+        for index = #dialogs, 1, -1 do
+            if not dialogs[index].closed then return dialogs[index] end
+        end
+        return nil
+    end
+    function Window:_canInteract(owner)
+        if self.BlockClicks then return false end
+        local modal = self:_topDialog()
+        if modal and modal ~= owner then return false end
+        if not modal then
+            for _, notification in ipairs(self.Notifications or {}) do
+                local hitbox = notification.hitbox
+                if owner ~= notification and hitbox and self:_over(hitbox.x, hitbox.y, hitbox.w, hitbox.h) then
+                    return false
+                end
+            end
+        end
+        return not self.InputFocus or self.InputFocus == owner
+    end
+    function Window:_cancelPointerCapture()
+        self.DragOffset = nil
+        self.ResizeOffset = nil
+        self.ScrollTarget = nil
+        self.SliderTarget = nil
+        self.ColorPickerDrag = nil
+        self.KeybindMenuDrag = nil
+        for _, label in ipairs(self.DraggableLabels or {}) do label.dragging = false end
+        for _, button in ipairs(self.DraggableButtons or {}) do button.pressed = false end
+        for _, menu in ipairs(self.DraggableMenus or {}) do menu.dragging = false end
+    end
+    function Window:_activateModal(dialog)
+        self:_closeFloating()
+        self:_cancelPointerCapture()
+        if self.KeyListenTarget then self.KeyListenTarget.listening = false end
+        self.KeyListenTarget = nil
+        self.KeyListenStarted = 0
+        self.ModalOwner = dialog
+        self.InputFocus = dialog
+        self.Mouse1Clicked = false
+        self.Mouse2Clicked = false
     end
     function Window:_hover(x, y, w, h, owner)
         if not self:_clipAllowsBox(y, h) then
             return false
         end
-        return (not self._focus or self._focus == owner) and self:_over(x, y, w, h)
+        return self:_canInteract(owner) and self:_over(x, y, w, h)
     end
     function Window:_tooltip(widget, x, y, w, h, owner)
         if self:_hotInteraction() then
@@ -2141,7 +2221,7 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:_click(x, y, w, h, owner)
-        if not self.Mouse1Clicked or self.BlockClicks then
+        if not self.Mouse1Clicked or not self:_canInteract(owner) then
             return false
         end
         local scale = self:GetScale()
@@ -2182,7 +2262,7 @@ function GalaxObsidian:CreateWindow(options)
                 return false
             end
         end
-        return self.Mouse1Clicked and not self.BlockClicks and (not self._focus or self._focus == owner) and self:_over(x, y, w, h)
+        return self.Mouse1Clicked and self:_canInteract(owner) and self:_over(x, y, w, h)
     end
     function Window:_clickFor(owner, x, y, w, h)
         return self:_click(x, y, w, h, owner)
@@ -2315,7 +2395,7 @@ function GalaxObsidian:CreateWindow(options)
         local scale = self:GetScale()
         self:_closeFloating("keybindMode")
         self.KeybindModeTarget = widget
-        self.KeybindModePopup = { x = x, y = y + math.floor(23 * scale), w = math.max(math.floor(82 * scale), w), h = math.floor(6 * scale) + #modes * math.floor(20 * scale), z = 135 }
+        self.KeybindModePopup = { x = x, y = y + math.floor(23 * scale), w = math.max(math.floor(82 * scale), w), h = math.floor(6 * scale) + #modes * math.floor(20 * scale), z = Layers.Popup + 40 }
         self:_claimInteraction(widget)
         self.Mouse2Clicked = false
     end
@@ -2481,18 +2561,19 @@ function GalaxObsidian:CreateWindow(options)
         self.HoldKey = nil
         self.HoldStarted = 0
         self.HoldLastRepeat = 0
-        self._focus = nil
+        self.InputFocus = nil
+        self.ModalOwner = nil
         self.DragOffset = nil
         self.ResizeOffset = nil
         self.KeybindMenuDrag = nil
         self.BlockClicks = false
     end
     function Window:_claimInteraction(owner)
-        self:MouseFocus(owner)
+        self:SetInputFocus(owner)
     end
     function Window:_releaseInteraction(owner, keepClick)
-        if owner == nil or self._focus == owner then
-            self._focus = nil
+        if owner == nil or self.InputFocus == owner then
+            self.InputFocus = nil
             if keepClick ~= true then
                 self.Mouse1Clicked = false
             end
@@ -2593,6 +2674,7 @@ function GalaxObsidian:CreateWindow(options)
         end
         if except ~= "search" then
             self.SearchFocused = false
+            self:_releaseInteraction("Search")
         end
         if except ~= "keybindMode" then
             if self.KeybindModeTarget then
@@ -3121,7 +3203,7 @@ function GalaxObsidian:CreateWindow(options)
         self:_square(ax, y, aw, asz, Theme.Surface, true, 1, 2, z + 1)
         self:_square(ax, y, aw, asz, addon.listening and self.Accent or Theme.Outline, false, 1, 2, z + 2)
         self:_text(fitTextToWidth(l, aw - math.floor(10 * sc), ts, Theme.Font), ax + math.floor(aw / 2), y + math.floor(asz / 2) - math.floor(_scaled(ts, sc) / 2) - _yOfs(sc), Theme.Text, ts, Theme.Font, true, true, z + 3)
-        if addon.disabled ~= true and self.Mouse2Clicked and (not fc or not self._focus or self._focus == addon) and self:_over(ax, y, aw, asz) then
+        if addon.disabled ~= true and self.Mouse2Clicked and (not fc or self:_canInteract(addon)) and self:_over(ax, y, aw, asz) then
             self:_openKeybindModePopup(addon, ax, y, aw)
         end
         if addon.disabled ~= true and self:_click(ax, y, aw, asz) then
@@ -3344,7 +3426,7 @@ function GalaxObsidian:CreateWindow(options)
         else
             self:_text(valueText, barX + math.floor((barW - centeredValueW) / 2), barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
         end
-        if not disabled and widget.allowRightClickInput and self.Mouse2Clicked and self:_over(barX, barY, barW, barH) then
+        if not disabled and widget.allowRightClickInput and self.Mouse2Clicked and self:_canInteract(widget) and self:_over(barX, barY, barW, barH) then
             local input = widget._input or { type = "sliderinput", numeric = true, finished = true }
             input.value = formatNumber(widget.value, widget.rounding)
             input.callback = function(value)
@@ -3449,7 +3531,7 @@ function GalaxObsidian:CreateWindow(options)
             true
         )
         self:_drawIcon(isOpen and "chevron-up" or "chevron-down", x + w - math.floor(14 * scale), iconY, math.floor(14 * scale), isOpen, z + 3)
-        widget.popup = { x = x, y = popupY, w = w, z = 120, multi = multi }
+        widget.popup = { x = x, y = popupY, w = w, z = Layers.Popup, multi = multi }
 
         if not disabled and self:_focusClick(x, boxY, w, boxH, widget) then
             if self.DropdownTarget == widget then
@@ -3686,7 +3768,7 @@ function GalaxObsidian:CreateWindow(options)
             y = swatchY + swatchSize + math.floor(3 * scale),
             w = widget.transparencyEnabled and math.floor(256 * scale) or math.floor(234 * scale),
             h = popupH,
-            z = 125,
+            z = Layers.Popup + 20,
         }
 
         if not disabled and self:_focusClick(swatchX, swatchY, swatchSize, swatchSize, widget) then
@@ -4464,7 +4546,7 @@ function GalaxObsidian:CreateWindow(options)
         if
             self.Mouse1Clicked
             and not self.BlockClicks
-            and self._focus == widget
+            and self.InputFocus == widget
             and not self:_over(info.x, info.y - math.floor(22 * scale), info.w, height + math.floor(22 * scale))
         then
             widget._searchText = ""
@@ -4522,7 +4604,7 @@ function GalaxObsidian:CreateWindow(options)
         local barInnerW = barW - framePad * 2
         local barInnerH = svSize - framePad * 2
         local alphaInnerX = alphaX + framePad
-        if self.Mouse1Clicked then
+        if self.Mouse1Clicked and self:_canInteract(widget) then
             if self:_over(svX, svY, svSize, svSize) then
                 self.ColorPickerDrag = "sv"
                 self:_claimInteraction(widget)
@@ -4659,7 +4741,7 @@ function GalaxObsidian:CreateWindow(options)
             true,
             z + 4
         )
-        if self.Mouse1Clicked and not self.BlockClicks and self._focus == widget and not self:_over(x, y - math.floor(22 * scale), info.w, info.h + math.floor(22 * scale)) then
+        if self.Mouse1Clicked and self:_canInteract(widget) and not self:_over(x, y - math.floor(22 * scale), info.w, info.h + math.floor(22 * scale)) then
             self.ColorPickerTarget = nil
             self.ColorPickerDrag = nil
             self:_releaseInteraction(widget)
@@ -4730,10 +4812,10 @@ function GalaxObsidian:CreateWindow(options)
         end
         local x, y = self.KeybindMenuX, self.KeybindMenuY
         x, y = self:_clampToViewport(x, y, width, height, 6, true)
-        local overDrag = self:_over(x, y, width, dragH)
-        if overDrag and self:_click(x, y, width, dragH) then
+        local overDrag = self:_hover(x, y, width, dragH, "KeybindMenuDrag")
+        if overDrag and self:_click(x, y, width, dragH, "KeybindMenuDrag") then
             self.KeybindMenuDrag = { offsetX = mouse.X - x, offsetY = mouse.Y - y }
-            self.Mouse1Clicked = false
+            self:_claimInteraction("KeybindMenuDrag")
         end
         if self.KeybindMenuDrag and self.Mouse1Held then
             x = mouse.X - self.KeybindMenuDrag.offsetX
@@ -4742,6 +4824,7 @@ function GalaxObsidian:CreateWindow(options)
             self.KeybindMenuX, self.KeybindMenuY = x, y
         elseif self.KeybindMenuDrag then
             self.KeybindMenuDrag = nil
+            self:_releaseInteraction("KeybindMenuDrag")
         end
         self.KeybindMenuX, self.KeybindMenuY = x, y
         self:_square(x, y, width, height, Theme.Topbar, true, 1, 4, 0)
@@ -4978,7 +5061,7 @@ function GalaxObsidian:CreateWindow(options)
                     button.doffY = mouse.Y - button.py
                     self:_claimInteraction(button)
                 end
-                local active = button.pressed or self:_over(x, y, width, height)
+                local active = button.pressed or self:_hover(x, y, width, height, button)
                 self:_square(x, y, width, height, active and Theme.Surface2 or Theme.Topbar, true, 1, 5, -3)
                 self:_square(x, y, width, height, Theme.SoftOutline, false, 1, 5, -2)
                 local textX = x + math.floor(12 * scale)
@@ -5023,7 +5106,7 @@ function GalaxObsidian:CreateWindow(options)
                 for index, item in ipairs(menu.items) do
                     if item.visible ~= false and not item.destroyed then
                         local rowY = y + headerHeight + math.floor(4 * scale) + (index - 1) * rowHeight
-                        local hovered = self:_over(x + 4, rowY, width - 8, rowHeight)
+                        local hovered = self:_hover(x + 4, rowY, width - 8, rowHeight, item)
                         if item.kind == "button" and hovered then
                             self:_square(x + 4, rowY, width - 8, rowHeight, Theme.PopupHover, true, 1, 3, -2)
                             if self:_click(x + 4, rowY, width - 8, rowHeight, item) and type(item.callback) == "function" then pcall(item.callback, item, menu) end
@@ -5048,7 +5131,7 @@ function GalaxObsidian:CreateWindow(options)
         local height = math.floor((loading.height or 275) * scale)
         local x = math.floor((viewport.X - width) / 2)
         local y = math.floor((viewport.Y - height) / 2 + (loading.centerOffsetY or -30))
-        local z = 180
+        local z = Layers.Loading
         self:_square(0, 0, viewport.X, viewport.Y, Color3.new(0, 0, 0), true, 0.6, 0, z)
         self:_square(x, y, width, height, Theme.Background, true, 1, 8, z + 1)
         self:_square(x, y, width, height, Theme.Outline, false, 1, 8, z + 2)
@@ -5174,8 +5257,8 @@ function GalaxObsidian:CreateWindow(options)
         local w = math.floor(widestLineWidth(lines, 14, Theme.Font) + pad * 2 + math.floor(26 * scale))
         local h = pad * 2 + #lines * lineH
         local x, y = self:_placeNearMouse(w, h, math.floor(12 * scale), math.floor(14 * scale), 6, true)
-        self:_square(x, y, w, h, Theme.Background, true, 1, 3, 145)
-        self:_square(x, y, w, h, Theme.SoftOutline, false, 1, 3, 146)
+        self:_square(x, y, w, h, Theme.Background, true, 1, 3, Layers.Tooltip)
+        self:_square(x, y, w, h, Theme.SoftOutline, false, 1, 3, Layers.Tooltip + 1)
         for i, line in ipairs(lines) do
             self:_text(
                 fitTextToWidth(line, w - math.floor(10 * scale), 14, Drawing.Fonts.Monospace),
@@ -5186,7 +5269,7 @@ function GalaxObsidian:CreateWindow(options)
                 Drawing.Fonts.Monospace,
                 false,
                 false,
-                147
+                Layers.Tooltip + 2
             )
         end
     end
@@ -5229,6 +5312,13 @@ function GalaxObsidian:CreateWindow(options)
         self._renderingMainWindow = false
         self.BlockClicks = false
         self.TooltipText = nil
+        local modal = self:_topDialog()
+        self.ModalOwner = modal
+        if modal then
+            self.InputFocus = modal
+        elseif self.InputFocus and self.InputFocus.closed then
+            self.InputFocus = nil
+        end
         if self.LoadingOverlay and not self.LoadingOverlay.closed then
             self:_renderLoading()
             self:_hideUnused()
@@ -5268,7 +5358,7 @@ function GalaxObsidian:CreateWindow(options)
         self.SearchHitbox = searchVisible and { x = searchX, y = searchY, w = searchW, h = searchH } or nil
         self:_consumeOutsideFloatingClick()
         local overSearch = searchVisible and self:_over(searchX, searchY, searchW, searchH)
-        if self:_click(x, y, w, topH) and not overSearch then
+        if self:_click(x, y, w, topH, "WindowDrag") and not overSearch then
             self.DragOffset = Vector2.new(mouse.X - x, mouse.Y - y)
             self:_claimInteraction("WindowDrag")
         end
