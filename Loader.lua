@@ -6,6 +6,7 @@ Loader.CoreAssets = {
     "assets/icons/check.png",
     "assets/icons/chevron-down.png",
     "assets/icons/chevron-up.png",
+    "assets/icons/gift.png",
     "assets/icons/key.png",
     "assets/icons/move.png",
     "assets/icons/move-diagonal-2.png",

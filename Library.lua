@@ -720,6 +720,7 @@ local IconData = {
     check = IconAssets["assets/icons/check.png"],
     ["chevron-down"] = IconAssets["assets/icons/chevron-down.png"],
     ["chevron-up"] = IconAssets["assets/icons/chevron-up.png"],
+    gift = IconAssets["assets/icons/gift.png"],
     key = IconAssets["assets/icons/key.png"],
     move = IconAssets["assets/icons/move.png"],
     ["move-diagonal-2"] = IconAssets["assets/icons/move-diagonal-2.png"],
