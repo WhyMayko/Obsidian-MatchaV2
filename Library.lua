@@ -5479,8 +5479,9 @@ function GalaxObsidian:CreateWindow(options)
             end
             local iconX = x + math.floor(18 * scale)
             local iconY = chromeTabY + math.floor(tabEntryH / 2)
+            local tabIconSize = math.max(12, math.floor(16 * scale))
             local tabColor = self:_animOrSnap(tab, "sidebar.text", (active or over) and Theme.Text or Theme.Muted, 16)
-            self:_drawIcon(tab.Icon or tab.Name, iconX, iconY, math.floor(16 * scale), active or over, chromeZ + 4)
+            self:_drawIcon(tab.Icon or tab.Name, iconX, iconY, tabIconSize, active or over, chromeZ + 4)
             self:_text(
                 fitTextToWidth(tab.Name, sidebarW - math.floor(38 * scale), 16, Theme.Font),
                 x + math.floor(38 * scale),
