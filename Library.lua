@@ -2004,7 +2004,7 @@ function GalaxObsidian:CreateWindow(options)
             setDrawingValue(object, meta, "Color", color)
         end
         setDrawingValue(object, meta, "Outline", outline == true)
-        setDrawingValue(object, meta, "Transparency", 1)
+        setDrawingValue(object, meta, "Transparency", self:_uiTransparency(1))
         setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 5))
         return object
     end
@@ -2020,7 +2020,7 @@ function GalaxObsidian:CreateWindow(options)
             setDrawingValue(object, meta, "Color", color)
         end
         setDrawingValue(object, meta, "Thickness", thickness or 1)
-        setDrawingValue(object, meta, "Transparency", 1)
+        setDrawingValue(object, meta, "Transparency", self:_uiTransparency(1))
         setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 4))
         return object
     end
@@ -2041,7 +2041,7 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "Filled", filled ~= false)
         setDrawingValue(object, meta, "Thickness", thickness or 1)
         setDrawingValue(object, meta, "NumSides", 24)
-        setDrawingValue(object, meta, "Transparency", 1)
+        setDrawingValue(object, meta, "Transparency", self:_uiTransparency(1))
         setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 5))
         return object
     end
