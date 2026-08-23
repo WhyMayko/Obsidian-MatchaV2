@@ -2004,7 +2004,7 @@ function GalaxObsidian:CreateWindow(options)
         if color then
             setDrawingValue(object, meta, "Color", color)
         end
-        setDrawingValue(object, meta, "Outline", outline == true)
+        setDrawingValue(object, meta, "Outline", false)
         setDrawingValue(object, meta, "Transparency", self:_uiTransparency(1))
         setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 5))
         return object
