@@ -1715,6 +1715,7 @@ function GalaxObsidian:CreateWindow(options)
         ),
         MinSize = resolvedMinSize,
         DPIScale = initialDPIScale,
+        UITransparency = clamp(tonumber(options.Transparency) or 1, 0.1, 1),
         Resizable = options.Resizable ~= false,
         MenuKey = options.MenuKey or 0x70,
         Position = Vector2.new(options.X or 180, options.Y or 130),
@@ -1951,6 +1952,12 @@ function GalaxObsidian:CreateWindow(options)
     function Window:_zIndex(z, default)
         return (z or default) + (self._renderingMainWindow and Layers.Window or 0)
     end
+    function Window:_uiTransparency(value)
+        if self.LoadingOverlay and not self.LoadingOverlay.closed then
+            return value or 1
+        end
+        return (value or 1) * self.UITransparency
+    end
 
     function Window:_square(x, y, w, h, color, filled, transparency, corner, z)
         if not w or not h or w <= 0 or h <= 0 then
@@ -1968,7 +1975,7 @@ function GalaxObsidian:CreateWindow(options)
         end
         setDrawingValue(object, meta, "Filled", filled ~= false)
         setDrawingValue(object, meta, "Corner", corner or 0)
-        setDrawingValue(object, meta, "Transparency", transparency or 1)
+        setDrawingValue(object, meta, "Transparency", self:_uiTransparency(transparency))
         setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 1))
         return object
     end
@@ -2058,7 +2065,7 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingPosition(object, meta, x, y)
         setDrawingSize(object, meta, w, h)
         setDrawingValue(object, meta, "Rounding", rounding or 0)
-        setDrawingValue(object, meta, "Transparency", transparency or 1)
+        setDrawingValue(object, meta, "Transparency", self:_uiTransparency(transparency))
         setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 6))
         return object
     end
@@ -5836,6 +5843,14 @@ function GalaxObsidian:CreateWindow(options)
         self.Size = newSize
         self.Position = Vector2.new(math.floor(center.X - newSize.X / 2 + 0.5), math.floor(center.Y - newSize.Y / 2 + 0.5))
         GalaxObsidian.DPIScale = percent
+    end
+    function Window:GetTransparency()
+        return self.UITransparency
+    end
+    function Window:SetTransparency(value)
+        value = tonumber(value)
+        assert(value and value >= 0.1 and value <= 1, "UI transparency must be between 0.1 and 1!")
+        self.UITransparency = value
     end
     function Window:GetTheme()
         local copy = {}

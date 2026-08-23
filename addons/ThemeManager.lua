@@ -155,7 +155,8 @@ end
 
 local function currentThemeSnapshot(Library, name)
 	local theme = { name = name }
-	local current = Library.ActiveWindow and Library.ActiveWindow:GetTheme() or {}
+	local window = Library.ActiveWindow
+	local current = window and window:GetTheme() or {}
 
 	theme.BackgroundColor = colorToHex(current.Background)
 	theme.MainColor = colorToHex(current.Main)
@@ -170,6 +171,7 @@ local function currentThemeSnapshot(Library, name)
 	theme.Bottombar = colorToHex(current.Bottombar)
 	theme.BottombarBorder = colorToHex(current.BottombarBorder)
 	theme.FooterText = colorToHex(current.FooterText)
+	theme.Transparency = window and window:GetTransparency() or 1
 
 	return theme
 end
@@ -252,6 +254,10 @@ function ThemeManager:ApplyTheme(name, themeType)
 
 	local win = Library.ActiveWindow
 	if win then
+		local transparency = tonumber(data.Transparency)
+		if transparency then
+			win:SetTransparency(math.max(0.1, math.min(1, transparency)))
+		end
 		if data.WindowIcon ~= nil then
 			win:SetIconUrl(data.WindowIcon)
 		end
@@ -260,6 +266,10 @@ function ThemeManager:ApplyTheme(name, themeType)
 		end
 		if type(data.WindowFooter) == "string" then
 			win.Footer = data.WindowFooter
+		end
+		local transparencyOption = Library.Options and Library.Options.ThemeManager_Transparency
+		if transparencyOption and transparencyOption.SetValue then
+			transparencyOption:SetValue(math.floor(win:GetTransparency() * 100 + 0.5))
 		end
 	end
 	self._applyingTheme = false
@@ -457,6 +467,19 @@ function ThemeManager:CreateThemeManager(groupbox)
 	groupbox:AddLabel("Accent color"):AddColorPicker("AccentColor", { Default = Color3.fromRGB(125, 85, 255) })
 	groupbox:AddLabel("Outline color"):AddColorPicker("OutlineColor", { Default = Color3.fromRGB(40, 40, 40) })
 	groupbox:AddLabel("Font color"):AddColorPicker("FontColor", { Default = Color3.fromRGB(255, 255, 255) })
+	groupbox:AddSlider("ThemeManager_Transparency", {
+		Text = "UI transparency",
+		Min = 10,
+		Max = 100,
+		Default = Library.ActiveWindow and math.floor(Library.ActiveWindow:GetTransparency() * 100 + 0.5) or 100,
+		Suffix = "%",
+		Rounding = 0,
+		Callback = function(value)
+			if Library.ActiveWindow then
+				Library.ActiveWindow:SetTransparency(value / 100)
+			end
+		end,
+	})
 
 	local themeNames = {}
 	for name in pairs(self.BuiltInThemes) do
