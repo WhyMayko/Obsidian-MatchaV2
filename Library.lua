@@ -3381,12 +3381,15 @@ function GalaxObsidian:CreateWindow(options)
             valueText = currentDisplay .. "/" .. maxDisplay
         end
         local scale = self:GetScale()
+        local centeredValueW = estimateTextWidth(valueText, 14, Theme.Font)
+        local scaledValTextSize = math.floor(14 * scale + 0.5)
+        local sliderValueText = self:_anim(widget, "slider.value.text", disabled and Theme.DimText or Theme.Text, 16)
         if not compact then
             self:_tooltip(widget, x, y, w, math.floor(33 * scale), widget)
             local sliderLabelText =
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
             self:_text(
-                fitTextToWidth(widget.label, w, 14, Theme.Font),
+                fitTextToWidth(widget.label, w - centeredValueW - math.floor(8 * scale), 14, Theme.Font),
                 x,
                 y + math.floor(2 * scale),
                 sliderLabelText,
@@ -3396,9 +3399,20 @@ function GalaxObsidian:CreateWindow(options)
                 true,
                 z + 2
             )
+            self:_text(
+                valueText,
+                x + w - centeredValueW,
+                y + math.floor(2 * scale),
+                sliderValueText,
+                14,
+                Drawing.Fonts.Monospace,
+                false,
+                true,
+                z + 2
+            )
         end
         local labelH = compact and 0 or math.floor(18 * scale)
-        local barH = math.floor(15 * scale)
+        local barH = compact and math.floor(15 * scale) or math.floor(10 * scale)
         local barX, barY, barW = x, y + labelH, w
         if compact then
             barY = y
@@ -3420,15 +3434,12 @@ function GalaxObsidian:CreateWindow(options)
         if fillW > 0 then
             self:_square(barX, barY, fillW, barH, sliderFillColor, true, 1, 3, z + 3)
         end
-        local centeredValueW = estimateTextWidth(valueText, 14, Theme.Font)
-        local scaledValTextSize = math.floor(14 * scale + 0.5)
-        local sliderValueText = self:_anim(widget, "slider.value.text", disabled and Theme.DimText or Theme.Text, 16)
         local sliderInput = widget._input
         local inputFocused = sliderInput and self.TextTarget == sliderInput
         if inputFocused then
             sliderInput.hitbox = { x = barX, y = barY, w = barW, h = barH }
             self:_renderTextInputValue(sliderInput.value, "", barX + math.floor(6 * scale), barY + math.floor((barH - scaledValTextSize) / 2), barW - math.floor(12 * scale), 14, true, false, z + 4, true, "center")
-        else
+        elseif compact then
             self:_text(valueText, barX + math.floor((barW - centeredValueW) / 2), barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
         end
         if not disabled and widget.allowRightClickInput and self.Mouse2Clicked and self:_canInteract(widget) and self:_over(barX, barY, barW, barH) then
