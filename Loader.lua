@@ -15,23 +15,19 @@ Loader.CoreAssets = {
     "assets/icons/user.png",
 }
 
+_G.Galax = _G.Galax or {}
+
 local function loadModule(path)
-    _G.Galax = _G.Galax or {}
     local loaded = _G.Galax[path]
     if type(loaded) == "table" then
         return loaded
     end
 
-    local ok, source = pcall(function()
-        return game:HttpGet(Loader.Repo .. path)
-    end)
-    assert(ok and type(source) == "string" and source ~= "", "Loader.lua failed to download " .. path .. "!")
+    local source = game:HttpGet(Loader.Repo .. path)
+    assert(type(source) == "string" and source ~= "", "Loader.lua failed to download " .. path .. "!")
 
-    local chunk, compileError = loadstring(source)
-    assert(type(chunk) == "function", "Loader.lua failed to compile " .. path .. ": " .. tostring(compileError) .. "!")
-
-    local ran, module = pcall(chunk)
-    assert(ran, "Loader.lua failed to run " .. path .. ": " .. tostring(module) .. "!")
+    local chunk = assert(loadstring(source), "Loader.lua failed to compile " .. path .. "!")
+    local module = chunk()
 
     if type(module) ~= "table" then
         module = _G.Galax[path]
@@ -42,33 +38,41 @@ local function loadModule(path)
 end
 
 local function loadAsset(path)
-    _G.Galax = _G.Galax or {}
     _G.Galax.Assets = _G.Galax.Assets or {}
     local data = _G.Galax.Assets[path]
     if type(data) == "string" and data ~= "" then return data end
     local ok, downloaded = pcall(function()
         return game:HttpGet(Loader.Repo .. path)
     end)
-    assert(ok and type(downloaded) == "string" and downloaded:sub(1, 8) == "\137PNG\r\n\26\n", "Loader.lua failed to download PNG " .. path .. "!")
-    _G.Galax.Assets[path] = downloaded
-    return downloaded
+    if ok and type(downloaded) == "string" and downloaded:sub(1, 8) == "\137PNG\r\n\26\n" then
+        _G.Galax.Assets[path] = downloaded
+        return downloaded
+    end
+    return nil
 end
 
 function Loader:Load()
-    for _, path in ipairs(self.CoreModules) do
-        loadModule(path)
-    end
     for _, path in ipairs(self.CoreAssets) do
         loadAsset(path)
     end
-    return loadModule("Library.lua")
+
+    local library = loadModule("Library.lua")
+    local thememanager = loadModule("addons/ThemeManager.lua")
+    local savemanager = loadModule("addons/SaveManager.lua")
+    local essentialsmanager = loadModule("addons/EssentialsManager.lua")
+
+    library.ThemeManager = thememanager
+    library.SaveManager = savemanager
+    library.EssentialsManager = essentialsmanager
+
+    _G.Galax["Library.lua"] = library
+    _G.Galax["addons/ThemeManager.lua"] = thememanager
+    _G.Galax["addons/SaveManager.lua"] = savemanager
+    _G.Galax["addons/EssentialsManager.lua"] = essentialsmanager
+
+    return library, thememanager, savemanager, essentialsmanager
 end
 
-_G.Galax = _G.Galax or {}
 _G.Galax["Loader.lua"] = Loader
 
-local library = Loader:Load()
-assert(type(library) == "table", "Loader.lua failed to return Library.lua!")
-_G.Galax["Library.lua"] = library
-
-return library
+return Loader:Load()
