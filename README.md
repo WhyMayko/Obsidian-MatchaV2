@@ -6,11 +6,14 @@ Obsidian Matcha is a Drawing API UI library for Matcha.
 
 ```lua
 local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
-local Library = loadstring(game:HttpGet(repo .. "Loader.lua"))()
+local Library, ThemeManager, SaveManager, EssentialsManager = loadstring(game:HttpGet(repo .. "Loader.lua"))()
+
+local Options = Library.Options
+local Toggles = Library.Toggles
 
 local Window = Library:CreateWindow({
     Title = "My Script",
-    Footer = "example",
+    Footer = "Galax Hub",
     Icon = 95816097006870,
     NotifySide = "Right",
     ShowSearch = true,
@@ -28,6 +31,10 @@ Group:AddToggle("Enabled", {
         print("Enabled:", value)
     end,
 })
+
+ThemeManager:SetLibrary(Library)
+SaveManager:SetLibrary(Library)
+EssentialsManager:SetLibrary(Library)
 ```
 
 Run the full example:
@@ -36,21 +43,13 @@ Run the full example:
 loadstring(game:HttpGet("https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/Example.lua"))()
 ```
 
-## Loading Addons
+## How the Loader Works
 
-```lua
-local function loadAddon(path)
-    local chunk = assert(loadstring(game:HttpGet(repo .. path)))
-    return chunk()
-end
+`Loader.lua` handles all asset downloading, module compilation, and caching in a single call.
 
-local ThemeManager = loadAddon("addons/ThemeManager.lua")
-local SaveManager = loadAddon("addons/SaveManager.lua")
-local EssentialsManager = loadAddon("addons/EssentialsManager.lua")
-local WebhookManager = loadAddon("addons/WebhookManager.lua")
-```
-
-`Loader.lua` loads the core modules and only the essential PNG assets before it loads `Library.lua`. Missing Lucide icons are downloaded on first use and cached for the session. TextManager, AnimationManager, DialogManager and NotificationManager are integrated into the core; ThemeManager and the persistence managers remain opt-in.
+- **Direct Return**: Calling `Loader.lua` returns `Library, ThemeManager, SaveManager, EssentialsManager`.
+- **Attached References**: Addons are also directly accessible via `Library.ThemeManager`, `Library.SaveManager`, and `Library.EssentialsManager`.
+- **Zero Boilerplate**: No need to write wrapper functions or manual pcalls in your game scripts.
 
 ### WebhookManager
 

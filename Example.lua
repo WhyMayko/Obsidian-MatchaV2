@@ -1,25 +1,6 @@
 local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 
-local loader = assert(loadstring(game:HttpGet(repo .. "Loader.lua")))
-local Library = loader()
-if type(Library) ~= "table" then
-    Library = _G.Galax and _G.Galax["Library.lua"]
-end
-assert(type(Library) == "table", "Example.lua failed to load Library.lua!")
-
-local function loadAddon(path)
-    local chunk = assert(loadstring(game:HttpGet(repo .. path)))
-    local addon = chunk()
-    if type(addon) ~= "table" then
-        addon = _G.Galax and _G.Galax[path]
-    end
-    assert(type(addon) == "table", "Example.lua failed to load " .. path .. "!")
-    return addon
-end
-
-local ThemeManager = loadAddon("addons/ThemeManager.lua")
-local SaveManager = loadAddon("addons/SaveManager.lua")
-local EssentialsManager = loadAddon("addons/EssentialsManager.lua")
+local Library, ThemeManager, SaveManager, EssentialsManager = loadstring(game:HttpGet(repo .. "Loader.lua"))()
 
 local Options = Library.Options
 local Toggles = Library.Toggles
