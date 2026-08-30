@@ -2,10 +2,7 @@ local GalaxObsidian = {}
 GalaxObsidian.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 local drawingMeta = setmetatable({}, { __mode = "k" })
 
--- Bootstrap
 GalaxObsidian.Version = "1.0.0"
-
--- Public State
 GalaxObsidian.ImageCache = GalaxObsidian.ImageCache or {}
 
 GalaxObsidian.TransparencyTextureUrl =
@@ -734,43 +731,6 @@ GalaxObsidian.AnimationManager = AnimationManager
 GalaxObsidian.DialogManager = DialogManager
 GalaxObsidian.NotificationManager = NotificationManager
 
--- Runtime Compatibility
-if not Color3.fromRGB then
-    Color3.fromRGB = function(r, g, b)
-        return Color3.new(r / 255, g / 255, b / 255)
-    end
-end
-
-if not Color3.fromHSV then
-    Color3.fromHSV = function(h, s, v)
-        local r, g, b
-        if s == 0 then
-            r, g, b = v, v, v
-        else
-            local i = math.floor(h * 6)
-            local f = h * 6 - i
-            local p = v * (1 - s)
-            local q = v * (1 - s * f)
-            local t = v * (1 - s * (1 - f))
-            if i % 6 == 0 then
-                r, g, b = v, t, p
-            elseif i % 6 == 1 then
-                r, g, b = q, v, p
-            elseif i % 6 == 2 then
-                r, g, b = p, v, t
-            elseif i % 6 == 3 then
-                r, g, b = p, q, v
-            elseif i % 6 == 4 then
-                r, g, b = t, p, v
-            else
-                r, g, b = v, p, q
-            end
-        end
-        return Color3.new(r, g, b)
-    end
-end
-
--- Shared Utilities
 local function clamp(value, minValue, maxValue)
     if value < minValue then
         return minValue
@@ -6115,7 +6075,6 @@ function GalaxObsidian:CreateWindow(options)
             Theme.Background = base
         end
 
-        -- Track which chrome fields were explicitly provided
         local explicit = {}
 
         if main then
@@ -6167,7 +6126,6 @@ function GalaxObsidian:CreateWindow(options)
             Theme.FooterText = footerText
             explicit.FooterText = true
         end
-        -- Apply chrome offsets only for fields NOT explicitly provided
         if base then
             applyChromeOffsets(base, explicit)
         end
@@ -6246,7 +6204,6 @@ function GalaxObsidian:CreateWindow(options)
             self._Window:_closeFloating()
         end
         function Tab:UpdateWarningBox(info)
-            -- Deprecated: use Section:AddLabel or Library:Notify
         end
 
         function Tab:AddSection(sectionName, side)

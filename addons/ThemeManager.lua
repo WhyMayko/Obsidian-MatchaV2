@@ -654,6 +654,7 @@ end
 
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/ThemeManager.lua"] = ThemeManager
+_G.Galax.ThemeManager = ThemeManager
 
 local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/community/"
 
@@ -676,16 +677,12 @@ _G.community.loadTheme = function(name)
 		warn("community.loadTheme: failed to save file")
 		return
 	end
-	local tm = _G.Galax and _G.Galax["addons/ThemeManager.lua"]
-	if tm then
-		local HttpService = game:GetService("HttpService")
-		local data = HttpService:JSONDecode(source)
-		if type(data) == "table" then
-			data.name = data.name or name
-			tm.CustomThemes[data.name] = data
-			tm:ApplyTheme(data.name, "local")
-			print("community.loadTheme: loaded '" .. data.name .. "'")
-		end
+	local HttpService = game:GetService("HttpService")
+	local data = HttpService:JSONDecode(source)
+	if type(data) == "table" then
+		data.name = data.name or name
+		ThemeManager.CustomThemes[data.name] = data
+		ThemeManager:ApplyTheme(data.name, "local")
 	end
 end
 

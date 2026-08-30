@@ -449,7 +449,6 @@ function SaveManager:BuildConfigSection(tab)
 		end
 	end)
 
-
 	self:SetIgnoreIndexes({
 		"SaveManager_ConfigName",
 		"SaveManager_ConfigList",
@@ -462,6 +461,7 @@ end
 
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/SaveManager.lua"] = SaveManager
+_G.Galax.SaveManager = SaveManager
 
 local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/community/"
 
@@ -484,11 +484,7 @@ _G.community.loadConfig = function(name)
 		warn("community.loadConfig: failed to save file")
 		return
 	end
-	local sm = _G.Galax and _G.Galax["addons/SaveManager.lua"]
-	if sm then
-		sm:Load(name)
-		print("community.loadConfig: loaded '" .. name .. "'")
-	end
+	SaveManager:Load(name)
 end
 
 return SaveManager

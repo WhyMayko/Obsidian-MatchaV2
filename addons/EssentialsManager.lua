@@ -88,5 +88,6 @@ end
 
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/EssentialsManager.lua"] = EssentialsManager
+_G.Galax.EssentialsManager = EssentialsManager
 
 return EssentialsManager
