@@ -1,6 +1,8 @@
 local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 
-local Library, ThemeManager, SaveManager, EssentialsManager = loadstring(game:HttpGet(repo .. "Loader.lua"))()
+loadstring(game:HttpGet(repo .. "Loader.lua"))()
+
+local Library, ThemeManager, SaveManager, EssentialsManager = _G.Galax()
 
 local Options = Library.Options
 local Toggles = Library.Toggles

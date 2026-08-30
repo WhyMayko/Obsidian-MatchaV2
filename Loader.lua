@@ -70,9 +70,25 @@ function Loader:Load()
     _G.Galax["addons/SaveManager.lua"] = savemanager
     _G.Galax["addons/EssentialsManager.lua"] = essentialsmanager
 
+    _G.Galax.Library = library
+    _G.Galax.ThemeManager = thememanager
+    _G.Galax.SaveManager = savemanager
+    _G.Galax.EssentialsManager = essentialsmanager
+
     return library, thememanager, savemanager, essentialsmanager
 end
 
 _G.Galax["Loader.lua"] = Loader
+_G.Galax.Get = function()
+    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager
+end
 
-return Loader:Load()
+setmetatable(_G.Galax, {
+    __call = function()
+        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager
+    end,
+})
+
+Loader:Load()
+
+return _G.Galax

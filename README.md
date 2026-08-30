@@ -6,7 +6,9 @@ Obsidian Matcha is a Drawing API UI library for Matcha.
 
 ```lua
 local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
-local Library, ThemeManager, SaveManager, EssentialsManager = loadstring(game:HttpGet(repo .. "Loader.lua"))()
+loadstring(game:HttpGet(repo .. "Loader.lua"))()
+
+local Library, ThemeManager, SaveManager, EssentialsManager = _G.Galax()
 
 local Options = Library.Options
 local Toggles = Library.Toggles
@@ -47,7 +49,7 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/WhyMayko/Obsidian-Mat
 
 `Loader.lua` handles all asset downloading, module compilation, and caching in a single call.
 
-- **Direct Return**: Calling `Loader.lua` returns `Library, ThemeManager, SaveManager, EssentialsManager`.
+- **Global Access**: Run `loadstring(game:HttpGet(repo .. "Loader.lua"))()` and retrieve modules via `_G.Galax()`, `_G.Galax:Get()`, or direct fields like `_G.Galax.Library`.
 - **Attached References**: Addons are also directly accessible via `Library.ThemeManager`, `Library.SaveManager`, and `Library.EssentialsManager`.
 - **Zero Boilerplate**: No need to write wrapper functions or manual pcalls in your game scripts.
 
