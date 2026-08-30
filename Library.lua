@@ -1245,45 +1245,6 @@ local function makeHandle(widget)
     return handle
 end
 
-function GalaxObsidian:GiveSignal(signal)
-    self.Signals = self.Signals or {}
-    self.Signals[#self.Signals + 1] = signal
-    return signal
-end
-function GalaxObsidian:OnUnload(callback)
-    self.UnloadCallbacks = self.UnloadCallbacks or {}
-    self.UnloadCallbacks[#self.UnloadCallbacks + 1] = callback
-end
-function GalaxObsidian:Unload()
-    self.Unloaded = true
-    for _, cb in ipairs(self.UnloadCallbacks or {}) do
-        pcall(cb)
-    end
-    for _, signal in ipairs(self.Signals or {}) do
-        if type(signal) == "table" and type(signal.Disconnect) == "function" then
-            pcall(function() signal:Disconnect() end)
-        elseif type(signal) == "function" then
-            pcall(signal)
-        end
-    end
-    self.Signals = {}
-    self.UnloadCallbacks = {}
-    if self.ActiveWindow then
-        self.ActiveWindow:Destroy()
-        self.ActiveWindow = nil
-    end
-    if _G.GalaxObsidianActiveWindow then
-        pcall(function() _G.GalaxObsidianActiveWindow:Destroy() end)
-        _G.GalaxObsidianActiveWindow = nil
-    end
-    for key, probe in pairs(measureProbes) do
-        probe:Remove()
-        measureProbes[key] = nil
-    end
-    textBoundsWidths = {}
-    self.Options = {}
-    self.Toggles = {}
-end
 local function estimateTextWidth(text, size, font)
     local scale = GalaxObsidian.ActiveWindow and GalaxObsidian.ActiveWindow:GetScale() or 1.0
     return TextManager:Measure(text, size or GalaxObsidian.FontSize or 14, font or Theme.Font, scale)
@@ -7190,8 +7151,8 @@ function GalaxObsidian:CreateWindow(options)
         end
     end
 
-    function Window:AddKeyTab(name, icon)
-        local tab = self:AddTab(name or "Key System", icon or "key")
+    function Window:AddKeyTab(name)
+        local tab = self:AddTab(name or "Key System", "key")
         tab.IsKeyTab = true
         local section = tab:AddSection("__keytab", "Left")
         function tab:AddLabel(text)
@@ -7208,8 +7169,8 @@ function GalaxObsidian:CreateWindow(options)
         return tab
     end
 
-    function Window:AddWebhookTab(name, icon)
-        local tab = self:AddTab(name or "Webhook", icon or "send")
+    function Window:AddWebhookTab(name)
+        local tab = self:AddTab(name or "Webhook", "send")
         tab.IsWebhookTab = true
         local manager = _G.Galax.WebhookManager
         manager:SetLibrary(GalaxObsidian)
@@ -7217,8 +7178,8 @@ function GalaxObsidian:CreateWindow(options)
         return tab
     end
 
-    function Window:AddGroupGuardTab(name, icon, groupId)
-        local tab = self:AddTab(name or "Group Guard", icon or "shield")
+    function Window:AddGroupGuardTab(name, groupId)
+        local tab = self:AddTab(name or "Group Guard", "shield")
         tab.IsGroupGuardTab = true
         local manager = _G.Galax.GroupGuard
         manager:SetLibrary(GalaxObsidian)

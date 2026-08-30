@@ -52,7 +52,7 @@ startupLoading:SetErrorButtons({
 local Tabs = {
     Main = Window:AddTab("Main", "user"),
     Key = Window:AddKeyTab("Key System"),
-    Webhook = Window:AddWebhookTab("Webhook", "send"),
+    Webhook = Window:AddWebhookTab("Webhook"),
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
 
