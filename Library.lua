@@ -4396,34 +4396,6 @@ function GalaxObsidian:CreateWindow(options)
         end
         local scrollState = self.TabScroll[tab]
 
-        if tab.WarningBox and tab.WarningBox.visible then
-            local wb = tab.WarningBox
-            local wbW = fullW
-            local textSize = 13
-            local titleSize = 14
-            local lines = wrapTextLines(wb.text, wbW - math.floor(40 * scale), textSize, 6, Theme.Font)
-            local wbH = math.floor(26 * scale) + #lines * math.floor(16 * scale)
-            local wbX = x + pad
-            local wbY = leftY
-            local wbClipTop = clipTopOverride or y
-            local wbClipBottom = clipBottomOverride or (y + h)
-            if wbY < wbClipBottom and wbY + wbH > wbClipTop then
-                local bannerBg = wb.isNormal and Theme.Surface or Color3.fromRGB(35, 20, 20)
-                local bannerOutline = wb.isNormal and Theme.Outline or Color3.fromRGB(90, 30, 30)
-                local accentColor = wb.isNormal and Theme.Accent or Theme.Red
-                self:_square(wbX, wbY, wbW, wbH, bannerBg, true, 1, 4, z + 1)
-                self:_square(wbX, wbY, wbW, wbH, bannerOutline, false, 1, 4, z + 2)
-                self:_square(wbX, wbY, math.floor(4 * scale), wbH, accentColor, true, 1, 2, z + 3)
-                self:_drawIcon(wb.isNormal and "info" or "alert-triangle", wbX + math.floor(16 * scale), wbY + math.floor(14 * scale), math.floor(14 * scale), true, z + 4)
-                self:_text(wb.title, wbX + math.floor(28 * scale), wbY + math.floor(7 * scale) - _yOfs(scale), accentColor, titleSize, Drawing.Fonts.Monospace, false, true, z + 4)
-                for lineIdx, line in ipairs(lines) do
-                    self:_text(line, wbX + math.floor(28 * scale), wbY + math.floor(24 * scale) + (lineIdx - 1) * math.floor(16 * scale) - _yOfs(scale), Theme.Muted, textSize, Drawing.Fonts.Monospace, false, true, z + 4)
-                end
-            end
-            leftY = leftY + wbH + math.floor(8 * scale)
-            rightY = rightY + wbH + math.floor(8 * scale)
-        end
-
         for index, section in ipairs(tab.Sections) do
             if self:_sectionVisible(section) then
                 local side = section.side
@@ -6280,13 +6252,7 @@ function GalaxObsidian:CreateWindow(options)
             self._Window:_closeFloating()
         end
         function Tab:UpdateWarningBox(info)
-            info = info or {}
-            self.WarningBox = {
-                visible = info.Visible ~= false and (info.Title ~= nil or info.Text ~= nil),
-                title = tostring(info.Title or "Warning"),
-                text = tostring(info.Text or ""),
-                isNormal = info.IsNormal == true,
-            }
+            -- Deprecated: use Section:AddLabel or Library:Notify
         end
 
         function Tab:AddSection(sectionName, side)
