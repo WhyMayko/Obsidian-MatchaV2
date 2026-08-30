@@ -487,9 +487,8 @@ task.spawn(function()
     for step, description in ipairs(steps) do
         if step == 2 then
             startupLoading:ShowSidebarPage(true)
-            startupLoading.Sidebar:AddLabel("Obsidian Matcha")
-            startupLoading.Sidebar:AddDivider()
-            startupLoading.Sidebar:AddValue("Version: v2")
+            local localPlayer = game:GetService("Players").LocalPlayer
+            local playerName = localPlayer and localPlayer.Name or "Player"
             startupLoading.Sidebar:AddValue("User: " .. tostring(playerName))
         end
         startupLoading:SetDescription(description)

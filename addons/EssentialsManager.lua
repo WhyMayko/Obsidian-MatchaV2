@@ -1,4 +1,3 @@
-
 local EssentialsManager = {
 	Library = nil,
 }
@@ -9,7 +8,7 @@ end
 
 function EssentialsManager:BuildSection(tab)
 	local Library = self.Library
-	assert(Library, "EssentialsManager: call SetLibrary first")
+	assert(Library, "EssentialsManager: call SetLibrary first!")
 
 	local MenuGroup = tab:AddLeftGroupbox("Menu", "wrench")
 
@@ -18,7 +17,7 @@ function EssentialsManager:BuildSection(tab)
 		Text = "Open Keybind Menu",
 		Callback = function(Value)
 			if not Library.ActiveWindow then
-				error("EssentialsManager: no active window for KeybindMenuOpen", 2)
+				assert(false, "EssentialsManager: no active window for KeybindMenuOpen!")
 			end
 			Library.ActiveWindow:SetKeybindMenuVisible(Value)
 		end,
@@ -29,7 +28,7 @@ function EssentialsManager:BuildSection(tab)
 		Text = "Input Block",
 		Callback = function(Value)
 			if not Library.ActiveWindow then
-				error("EssentialsManager: no active window for InputBlock!", 2)
+				assert(false, "EssentialsManager: no active window for InputBlock!")
 			end
 			Library.ActiveWindow:SetInputBlocking(Value)
 		end,
@@ -50,7 +49,7 @@ function EssentialsManager:BuildSection(tab)
 		Text = "DPI Scale",
 		Callback = function(Value)
 			if not Library.ActiveWindow then
-				error("EssentialsManager: no active window for DPIDropdown", 2)
+				assert(false, "EssentialsManager: no active window for DPIDropdown!")
 			end
 			local pct = tonumber(Value:match("%d+")) or 100
 			Library.ActiveWindow:SetDPIScale(pct)

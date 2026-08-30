@@ -275,7 +275,7 @@ function DialogManager:Dialog(options)
 	local Library = self.Library
 	local win = Library and Library.ActiveWindow
 	if not win then
-		error("DialogManager: no active window", 2)
+		assert(false, "DialogManager: no active window!")
 	end
 
 	local dialog = {
@@ -384,7 +384,7 @@ function DialogManager:RenderDialogs(window)
 
 	local TM = self.TextManager
 	if not TM then
-		error("DialogManager: TextManager not set (call SetLibrary first)", 2)
+		assert(false, "DialogManager: TextManager not set (call SetLibrary first)!")
 	end
 	local scale = window:GetScale()
 	local cam = workspace.CurrentCamera
@@ -394,7 +394,7 @@ function DialogManager:RenderDialogs(window)
 		if dialog.closed then
 			if dialog.onClose then
 				local ok, err = pcall(dialog.onClose)
-				if not ok then error("DialogManager onClose: " .. tostring(err), 2) end
+				if not ok then assert(false, "DialogManager onClose: " .. tostring(err) .. "!") end
 			end
 			table.remove(window.Dialogs, i)
 		end
@@ -492,7 +492,7 @@ function DialogManager:RenderDialogs(window)
 			if dialog == topDialog and not btn.Disabled and hovered and window:_click(bx, btnY, bw, btnH, dialog) then
 				if btn.Callback then
 					local ok, err = pcall(btn.Callback, dialog)
-					if not ok then error("DialogManager btn.Callback: " .. tostring(err), 2) end
+					if not ok then assert(false, "DialogManager btn.Callback: " .. tostring(err) .. "!") end
 				end
 				if btn.Close ~= false then
 					dialog:Destroy()
@@ -521,7 +521,7 @@ function NotificationManager:Notify(message, title, duration)
 	local Library = self.Library
 	local win = Library and Library.ActiveWindow
 	if not win then
-		error("NotificationManager: no active window", 2)
+		assert(false, "NotificationManager: no active window!")
 	end
 
 	if type(message) == "table" then
@@ -604,7 +604,7 @@ function NotificationManager:RenderNotifications(window)
 		if notif.closed or now >= notif.expires + slideTime then
 			if notif.closed and notif._onDismiss then
 				local ok, err = pcall(notif._onDismiss)
-				if not ok then error("NotificationManager _onDismiss: " .. tostring(err), 2) end
+				if not ok then assert(false, "NotificationManager _onDismiss: " .. tostring(err) .. "!") end
 			end
 			table.remove(window.Notifications, i)
 		end
@@ -677,7 +677,7 @@ function NotificationManager:RenderNotifications(window)
 		if over and window.Mouse1Clicked then
 			if notif._onClick then
 				local ok, err = pcall(notif._onClick)
-				if not ok then error("NotificationManager _onClick: " .. tostring(err), 2) end
+				if not ok then assert(false, "NotificationManager _onClick: " .. tostring(err) .. "!") end
 				notif._onDismiss = nil
 			end
 			window.Mouse1Clicked = false
@@ -704,8 +704,7 @@ function NotificationManager:RenderNotifications(window)
 	end
 end
 
-local IconAssets = _G.Galax and _G.Galax.Assets
-assert(type(IconAssets) == "table", "Library.lua requires Loader.lua to load icon assets!")
+local IconAssets = (_G.Galax and _G.Galax.Assets) or {}
 local IconAliases = {
     chevron = "chevron-down",
     chevrondown = "chevron-down",
@@ -748,7 +747,7 @@ local function safeCall(callback, ...)
     if ok then
         return result
     end
-    error("safeCall: " .. tostring(result), 2)
+    assert(false, "safeCall: " .. tostring(result) .. "!")
 end
 
 local function rgbToHsv(color)
@@ -1356,9 +1355,7 @@ end
 
 function GalaxObsidian:AddDraggableLabel(text)
     local win = self.ActiveWindow
-    if not win then
-        error("AddDraggableLabel: no active window", 2)
-    end
+    assert(win, "AddDraggableLabel requires an active window!")
     return win:AddDraggableLabel(text)
 end
 
@@ -1647,9 +1644,7 @@ function GalaxObsidian:CreateWindow(options)
     end
     options = options or {}
     local mouse = getMouse()
-    if not mouse then
-        error("CreateWindow: no LocalPlayer or mouse available", 2)
-    end
+    assert(mouse, "CreateWindow: no LocalPlayer or mouse available!")
     local optSize = options.Size
     local resolvedSize = Vector2.new(720, 600)
     if type(optSize) == "table" and optSize.X ~= nil then
@@ -1787,7 +1782,7 @@ function GalaxObsidian:CreateWindow(options)
             if type(callback) == "function" then
                 task.spawn(function()
                     local ok, err = pcall(callback, cached)
-                    if not ok then error("RequestImage callback: " .. tostring(err), 2) end
+                    if not ok then assert(false, "RequestImage callback: " .. tostring(err) .. "!") end
                 end)
             end
             return cached
@@ -1822,7 +1817,7 @@ function GalaxObsidian:CreateWindow(options)
                 GalaxObsidian.ImageCache[url] = data
                 for _, cb in ipairs(ImageLoading[url]) do
                     local ok, err = pcall(cb, data)
-                    if not ok then error("ImageLoading callback: " .. tostring(err), 2) end
+                    if not ok then assert(false, "ImageLoading callback: " .. tostring(err) .. "!") end
                 end
             end
             ImageLoading[url] = nil

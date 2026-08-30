@@ -52,7 +52,7 @@ local function readTable(path)
 
 	local source = readfile(path)
 	if type(source) ~= "string" then
-		error("WebhookManager: file read failed for " .. path .. "!", 2)
+		assert(false, "WebhookManager: file read failed for " .. path .. "!")
 	end
 
 	local ok, data = pcall(function() return HttpService:JSONDecode(source) end)
@@ -327,7 +327,7 @@ end
 function WebhookManager:BuildWebhookSection(tab)
 	local Library = self.Library
 	if not Library then
-		error("WebhookManager:BuildWebhookSection requires Library (call SetLibrary first)!", 2)
+		assert(false, "WebhookManager:BuildWebhookSection requires Library (call SetLibrary first)!")
 	end
 
 	local saveManager = _G.Galax and _G.Galax.SaveManager

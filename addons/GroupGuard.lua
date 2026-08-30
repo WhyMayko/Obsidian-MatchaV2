@@ -56,7 +56,7 @@ end
 function GroupGuard:SetGroup(groupId)
 	local gid = type(groupId) == "number" and groupId or tonumber(tostring(groupId or ""))
 	if not gid then
-		error("GroupGuard: SetGroup needs a group id!", 2)
+		assert(false, "GroupGuard: SetGroup needs a group id!")
 	end
 	self.GroupId = gid
 	self:ResetState()
@@ -173,7 +173,7 @@ end
 function GroupGuard:BuildSection(tab)
 	local Library = self.Library
 	if not Library then
-		error("GroupGuard: call SetLibrary first!", 2)
+		assert(false, "GroupGuard: call SetLibrary first!")
 	end
 
 	local detector = tab:AddLeftGroupbox("Rank Detector")

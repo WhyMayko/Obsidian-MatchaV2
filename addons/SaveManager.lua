@@ -54,19 +54,19 @@ local function readTable(path)
 
 	local source = readfile(path)
 	if type(source) ~= "string" then
-		error("SaveManager readTable: file read failed for " .. path, 2)
+		assert(false, "SaveManager readTable: file read failed for " .. path .. "!")
 	end
 
 	local ok, data = pcall(function() return HttpService:JSONDecode(source) end)
 	if not ok then
-		error("SaveManager readTable: failed to decode JSON from " .. path, 2)
+		assert(false, "SaveManager readTable: failed to decode JSON from " .. path .. "!")
 	end
 
 	if type(data) == "table" then
 		return data
 	end
 
-	error("SaveManager readTable: decoded JSON is not a table for " .. path, 2)
+	assert(false, "SaveManager readTable: decoded JSON is not a table for " .. path .. "!")
 end
 
 function SaveManager:SetLibrary(library)
@@ -335,7 +335,7 @@ end
 function SaveManager:BuildConfigSection(tab)
 	local Library = self.Library
 	if not Library then
-		error("SaveManager:BuildConfigSection requires Library (call SetLibrary first)", 2)
+		assert(false, "SaveManager:BuildConfigSection requires Library (call SetLibrary first)!")
 	end
 
 	local Options = Library.Options

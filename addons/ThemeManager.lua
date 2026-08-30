@@ -96,19 +96,19 @@ local function readTable(path)
 
 	local source = readfile(path)
 	if type(source) ~= "string" then
-		error("ThemeManager readTable: file read failed for " .. path, 2)
+		assert(false, "ThemeManager readTable: file read failed for " .. path .. "!")
 	end
 
 	local ok, data = pcall(function() return HttpService:JSONDecode(source) end)
 	if not ok then
-		error("ThemeManager readTable: failed to decode JSON from " .. path, 2)
+		assert(false, "ThemeManager readTable: failed to decode JSON from " .. path .. "!")
 	end
 
 	if type(data) == "table" then
 		return data
 	end
 
-	error("ThemeManager readTable: decoded JSON is not a table for " .. path, 2)
+	assert(false, "ThemeManager readTable: decoded JSON is not a table for " .. path .. "!")
 end
 
 local function colorToHex(color, alpha)
@@ -227,8 +227,7 @@ function ThemeManager:ApplyTheme(name, themeType)
 	end
 
 	if not Library or not data then
-		error("ThemeManager:ApplyTheme requires Library and theme data", 2)
-		return false, "theme not found"
+		assert(false, "ThemeManager:ApplyTheme requires Library and theme data!")
 	end
 
 	self._applyingTheme = true
@@ -414,11 +413,8 @@ end
 
 function ThemeManager:ResetDefault()
 	self.DefaultTheme = { Type = "web", Name = "Default" }
-
 	writeTable(DefaultThemeFile, self.DefaultTheme)
-
 	self:ApplyTheme("Default", "web")
-
 	return true, "web", "Default"
 end
 
@@ -429,7 +425,7 @@ end
 function ThemeManager:CreateThemeManager(groupbox)
 	local Library = self.Library
 	if not Library then
-		error("ThemeManager:CreateThemeManager requires Library (call SetLibrary first)", 2)
+		assert(false, "ThemeManager:CreateThemeManager requires Library (call SetLibrary first)!")
 	end
 
 	local function refreshCustomThemeList()
