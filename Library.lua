@@ -1548,19 +1548,11 @@ local function imageUrl(value)
     return value
 end
 local function parsePngDimensions(data)
-    if data and data:sub(2, 4) == "PNG" then
-        local w = string.unpack(">I4", data:sub(17, 20))
-        local h = string.unpack(">I4", data:sub(21, 24))
-        if w > 0 and h > 0 then
-            return w, h
-        end
-    end
-    local ok, img = pcall(Drawing.new, "Image")
-    if ok then
-        img.Data = data
-        local w, h = img.Size.X, img.Size.Y
-        img:Remove()
-        if w > 0 and h > 0 then
+    if data and type(data) == "string" and data:sub(2, 4) == "PNG" and #data >= 24 then
+        local ok, w, h = pcall(function()
+            return string.unpack(">I4", data:sub(17, 20)), string.unpack(">I4", data:sub(21, 24))
+        end)
+        if ok and w and h and w > 0 and h > 0 then
             return w, h
         end
     end
@@ -3392,8 +3384,9 @@ function GalaxObsidian:CreateWindow(options)
             self:_tooltip(widget, x, y, w, math.floor(33 * scale), widget)
             local sliderLabelText =
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
+            local labelMaxW = math.max(0, w - centeredValueW - math.floor(12 * scale))
             self:_text(
-                fitTextToWidth(widget.label, w - centeredValueW - math.floor(8 * scale), 14, Theme.Font),
+                fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font),
                 x,
                 y + math.floor(2 * scale),
                 sliderLabelText,
@@ -5698,19 +5691,23 @@ function GalaxObsidian:CreateWindow(options)
         end
         local totalW = iconW + gap + chromeTitleW
         local startX = x + math.floor((sidebarW - totalW) / 2)
-        if iconW > 0 then
+        if iconW > 0 and self.IconData and self.IconData ~= "" then
             if not self._titleIconDrawing then
                 self._titleIconDrawing = Drawing.new("Image")
             end
             local iconObj = self._titleIconDrawing
             if iconObj then
                 if self._titleIconLastData ~= self.IconData then
-                    iconObj.Data = self.IconData
-                    self._titleIconLastData = self.IconData
+                    local ok = pcall(function()
+                        iconObj.Data = self.IconData
+                    end)
+                    if ok then
+                        self._titleIconLastData = self.IconData
+                    end
                 end
                 iconObj.Position = Vector2.new(startX, y + math.floor((topH - iconH) / 2))
                 iconObj.Size = Vector2.new(iconW, iconH)
-                iconObj.ZIndex = chromeZ + 4
+                iconObj.ZIndex = self:_zIndex(chromeZ + 4)
                 iconObj.Visible = true
             end
             startX = startX + iconW + gap
@@ -5799,7 +5796,7 @@ function GalaxObsidian:CreateWindow(options)
             )
             chromeTabY = chromeTabY + tabEntryH
         end
-        if self.SidebarImageReady and self.SidebarImageData then
+        if self.SidebarImageReady and self.SidebarImageData and self.SidebarImageData ~= "" then
             if not self._sidebarImageDrawing then
                 self._sidebarImageDrawing = Drawing.new("Image")
             end
@@ -5836,12 +5833,16 @@ function GalaxObsidian:CreateWindow(options)
             local imgObj = self._sidebarImageDrawing
             if imgObj then
                 if self._sidebarImageLastData ~= self.SidebarImageData then
-                    imgObj.Data = self.SidebarImageData
-                    self._sidebarImageLastData = self.SidebarImageData
+                    local ok = pcall(function()
+                        imgObj.Data = self.SidebarImageData
+                    end)
+                    if ok then
+                        self._sidebarImageLastData = self.SidebarImageData
+                    end
                 end
                 imgObj.Position = Vector2.new(imgX, imgY)
                 imgObj.Size = Vector2.new(imgW, imgH)
-                imgObj.ZIndex = chromeZ + 3
+                imgObj.ZIndex = self:_zIndex(chromeZ + 3)
                 imgObj.Visible = true
             end
         elseif self._sidebarImageDrawing then

@@ -459,6 +459,20 @@ function SaveManager:BuildConfigSection(tab)
 	self.AutoloadConfigLabel = groupbox:AddLabel("Current autoload config: " .. tostring(self:GetAutoloadConfig()))
 end
 
+function SaveManager:ApplyToTab(tab)
+	self:BuildConfigSection(tab)
+end
+
+function SaveManager:Add(target, ...)
+	if type(target) == "table" and (target.AddLeftGroupbox or target.AddRightGroupbox or target.AddGroupbox or target._Window or target.Sections) then
+		return self:BuildConfigSection(target)
+	else
+		return self:Save(target, ...)
+	end
+end
+
+SaveManager.BuildSection = SaveManager.BuildConfigSection
+
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/SaveManager.lua"] = SaveManager
 _G.Galax.SaveManager = SaveManager

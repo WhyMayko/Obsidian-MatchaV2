@@ -501,6 +501,14 @@ end
 WebhookManager.BuildSection = WebhookManager.BuildWebhookSection
 WebhookManager.ApplyToTab = WebhookManager.BuildSection
 
+function WebhookManager:Add(target, ...)
+	if type(target) == "table" and (target.AddLeftGroupbox or target.AddRightGroupbox or target.AddGroupbox or target._Window or target.Sections) then
+		return self:BuildSection(target)
+	else
+		return self:Save(target, ...)
+	end
+end
+
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/WebhookManager.lua"] = WebhookManager
 _G.Galax.WebhookManager = WebhookManager

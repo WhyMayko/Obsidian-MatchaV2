@@ -49,6 +49,11 @@ local ThemeManager = {
 	DefaultTheme = { Type = "web", Name = "Default" },
 }
 
+for idx, theme in ipairs(BuiltInThemes) do
+	theme.index = idx
+	ThemeManager.BuiltInThemes[theme.name] = theme
+end
+
 local HttpService = game:GetService("HttpService")
 local SettingsFolder = "Galax/Obsidian/Settings"
 local ThemeFolder = SettingsFolder .. "/Themes"
@@ -418,30 +423,49 @@ function ThemeManager:ResetDefault()
 	return true, "web", "Default"
 end
 
+function ThemeManager:SetFolder(folder)
+	SettingsFolder = tostring(folder or "Galax/Obsidian/Settings")
+	ThemeFolder = SettingsFolder .. "/Themes"
+	DefaultThemeFile = SettingsFolder .. "/DefaultTheme.txt"
+	ensureFolder(ThemeFolder)
+	self.Folder = folder
+end
+
+function ThemeManager:SetLibrary(library)
+	self.Library = library
+end
+
 function ThemeManager:CreateGroupBox(tab)
-	return tab:AddLeftGroupbox("Themes")
+	assert(tab, "ThemeManager:CreateGroupBox requires a Tab!")
+	return tab:AddRightGroupbox("Themes", "paint-bucket")
 end
 
 function ThemeManager:CreateThemeManager(groupbox)
 	local Library = self.Library
-	if not Library then
-		assert(false, "ThemeManager:CreateThemeManager requires Library (call SetLibrary first)!")
-	end
+	assert(Library, "ThemeManager: call SetLibrary first!")
 
-	local function refreshCustomThemeList()
-		if Library.Options.ThemeManager_CustomThemeList then
-			Library.Options.ThemeManager_CustomThemeList:SetValues(self:ReloadCustomThemes())
-			Library.Options.ThemeManager_CustomThemeList:SetValue(nil)
-		end
-	end
+	ensureFolder(ThemeFolder)
 
 	local function resetDefaultTheme()
-		local themeType, themeName = self:GetDefaultTheme()
+		if not isfile(DefaultThemeFile) then
+			Library:Notify("No default theme is set.", 4)
+			return
+		end
+
+		local ok, err = pcall(delfile, DefaultThemeFile)
+		if not ok then
+			assert(false, "ThemeManager resetDefaultTheme: failed to delete " .. DefaultThemeFile .. ": " .. tostring(err) .. "!")
+		end
+
+		Library:Notify("Reset default theme to Obsidian Default.", 4)
+	end
+
+	local themeType, themeName = self:GetDefaultTheme()
+	if themeName then
 		self:ApplyTheme(themeName, themeType)
 
-		if themeType == "local" then
+		if themeType == "custom" or themeType == "local" then
 			if Library.Options.ThemeManager_CustomThemeList then
-				Library.Options.ThemeManager_CustomThemeList:SetValues(self:ReloadCustomThemes())
 				Library.Options.ThemeManager_CustomThemeList:SetValue(themeName)
 			end
 			if Library.Options.ThemeManager_ThemeList then
@@ -459,6 +483,13 @@ function ThemeManager:CreateThemeManager(groupbox)
 		Library:Notify(string.format("Loaded default theme: %q", tostring(themeName)), 4)
 	end
 
+	local function refreshCustomThemeList()
+		if Library.Options.ThemeManager_CustomThemeList then
+			Library.Options.ThemeManager_CustomThemeList:SetValues(self:ReloadCustomThemes())
+			Library.Options.ThemeManager_CustomThemeList:SetValue(nil)
+		end
+	end
+
 	groupbox:AddLabel("Background color"):AddColorPicker("BackgroundColor", { Default = Color3.fromRGB(17, 17, 17) })
 	groupbox:AddLabel("Main color"):AddColorPicker("MainColor", { Default = Color3.fromRGB(25, 25, 25) })
 	groupbox:AddLabel("Accent color"):AddColorPicker("AccentColor", { Default = Color3.fromRGB(125, 85, 255) })
@@ -471,6 +502,7 @@ function ThemeManager:CreateThemeManager(groupbox)
 		Default = Library.ActiveWindow and math.floor(Library.ActiveWindow:GetTransparency() * 100 + 0.5) or 100,
 		Suffix = "%",
 		Rounding = 0,
+		HideMax = true,
 		Callback = function(value)
 			if Library.ActiveWindow then
 				Library.ActiveWindow:SetTransparency(value / 100)
@@ -484,6 +516,7 @@ function ThemeManager:CreateThemeManager(groupbox)
 		Max = 12,
 		Default = Library.ActiveWindow and Library.ActiveWindow:GetCornerRadius() or 4,
 		Rounding = 0,
+		HideMax = true,
 		Callback = function(value)
 			if Library.ActiveWindow then
 				Library.ActiveWindow:SetCornerRadius(value)
@@ -647,6 +680,16 @@ end
 function ThemeManager:ApplyToGroupbox(groupbox)
 	self:CreateThemeManager(groupbox)
 end
+
+function ThemeManager:Add(target, ...)
+	if type(target) == "table" and (target.AddLeftGroupbox or target.AddRightGroupbox or target.AddGroupbox or target._Window or target.Sections) then
+		return self:ApplyToTab(target)
+	else
+		return self:SaveCustomTheme(target, ...)
+	end
+end
+
+ThemeManager.BuildSection = ThemeManager.ApplyToTab
 
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/ThemeManager.lua"] = ThemeManager

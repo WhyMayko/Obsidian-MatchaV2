@@ -505,11 +505,10 @@ end)
 EssentialsManager:SetLibrary(Library)
 EssentialsManager:BuildSection(Tabs["UI Settings"])
 
-ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
-
-ThemeManager:SetFolder("Galax/Obsidian/Settings")
 SaveManager:SetFolder("Galax/Obsidian/Settings")
+SaveManager:Add(Tabs["UI Settings"])
 
-SaveManager:BuildConfigSection(Tabs["UI Settings"])
-ThemeManager:ApplyToTab(Tabs["UI Settings"])
+ThemeManager:SetLibrary(Library)
+ThemeManager:SetFolder("Galax/Obsidian/Settings")
+ThemeManager:Add(Tabs["UI Settings"])

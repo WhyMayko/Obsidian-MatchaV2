@@ -229,6 +229,7 @@ function GroupGuard:BuildTab(window, name, icon, groupId)
 end
 
 GroupGuard.ApplyToTab = GroupGuard.BuildSection
+GroupGuard.Add = GroupGuard.BuildSection
 
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/GroupGuard.lua"] = GroupGuard
