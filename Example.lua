@@ -60,7 +60,7 @@ Library:SetWatermarkVisibility(true)
 
 Tabs.Main:UpdateWarningBox({
     Title = "GalaxHub V2 System",
-    Text = "All features loaded. Support for WarningBox, Full-width sections, InfoCards and auto-cleanup active!",
+    Text = "All features loaded. Support for WarningBox, Groupboxes, Tabboxes, Addons and auto-cleanup active!",
     Visible = true,
     IsNormal = true,
 })
@@ -440,31 +440,42 @@ ScrollGroup:AddButton({
     end,
 })
 
-local FullGroup = Tabs.Main:AddFullGroupbox("Community & Server Information")
 local localPlayer = game:GetService("Players").LocalPlayer
 local playerName = localPlayer and localPlayer.Name or "User"
-FullGroup:AddInfoCard({
-    Title = "Hello, " .. playerName,
-    Badge = "Tester",
-    Subtitle = playerName .. " - GalaxHub Script",
-    Avatar = nil,
-    ButtonText = "Discord",
-    ButtonSubtext = "Copy link",
-    ButtonIcon = "copy",
-    OnButtonClick = function()
+
+local UserGroup = Tabs.Main:AddLeftGroupbox("User", "user")
+UserGroup:AddLabel("Logged in as: " .. playerName)
+UserGroup:AddLabel("Role: Tester")
+UserGroup:AddDivider()
+UserGroup:AddButton({
+    Text = "Join Discord",
+    Func = function()
         pcall(function() setclipboard("https://discord.gg/galaxhub") end)
         Library:Notify({
-            Title = "Discord Link",
+            Title = "Discord",
             Description = "Copied https://discord.gg/galaxhub to clipboard!",
             Time = 3,
         })
     end,
-    Items = {
-        { Label = "Players", Value = function() local plrs = game:GetService("Players"); local list = plrs and plrs:GetPlayers(); return tostring(list and #list or 1) .. " online" end },
-        { Label = "Region", Value = "Brazil" },
-        { Label = "FPS", Value = "60 fps" },
-        { Label = "Ping", Value = "32 ms" },
-    },
+})
+
+local ServerGroup = Tabs.Main:AddRightGroupbox("Server", "activity")
+local players = game:GetService("Players")
+local list = players and players:GetPlayers()
+ServerGroup:AddLabel("Players online: " .. tostring(list and #list or 1))
+ServerGroup:AddLabel("Region: Brazil")
+ServerGroup:AddLabel("Server Ping: 32 ms")
+ServerGroup:AddDivider()
+ServerGroup:AddButton({
+    Text = "Copy Job ID",
+    Func = function()
+        pcall(function() setclipboard(tostring(game.JobId or "")) end)
+        Library:Notify({
+            Title = "Job ID",
+            Description = "Copied JobId to clipboard!",
+            Time = 3,
+        })
+    end,
 })
 
 Tabs.Key:AddLabel({
