@@ -6214,18 +6214,50 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:Destroy()
+        if self.Destroyed then return end
+        self.Destroyed = true
         self.Running = false
-        self:_setOpen(false)
+        self.Open = false
         self:_clearInteraction()
+
+        pcall(function()
+            setrobloxinput(true)
+        end)
+        self.LastRobloxInputBlocked = nil
+
+        if type(self.Signals) == "table" then
+            for _, conn in ipairs(self.Signals) do
+                if type(conn) == "table" and type(conn.Disconnect) == "function" then
+                    pcall(function() conn:Disconnect() end)
+                elseif type(conn) == "userdata" and type(conn.Disconnect) == "function" then
+                    pcall(function() conn:Disconnect() end)
+                end
+            end
+            self.Signals = {}
+        end
+
         for _, list in pairs(self.Pool) do
             for _, object in ipairs(list) do
                 pcall(function()
+                    object.Visible = false
                     object:Remove()
                 end)
                 drawingMeta[object] = nil
             end
         end
         self.Pool = { Square = {}, Text = {}, Line = {}, Circle = {}, Image = {} }
+
+        self.DraggableLabels = {}
+        self.DraggableButtons = {}
+        self.DraggableMenus = {}
+        self.Notifications = {}
+        self.Tabs = {}
+        self.ActiveTab = nil
+        self.LoadingOverlay = nil
+        if self.Watermark then
+            self.Watermark.visible = false
+        end
+
         if GalaxObsidian.ActiveWindow == self then
             GalaxObsidian.ActiveWindow = nil
         end
@@ -6233,6 +6265,7 @@ function GalaxObsidian:CreateWindow(options)
             _G.GalaxObsidianActiveWindow = nil
         end
     end
+    Window.Unload = Window.Destroy
 
     function Window:AddTab(name, icon)
         local tabName = name
@@ -7336,6 +7369,100 @@ function GalaxObsidian:GetCornerRadius()
     end
     return self.CornerRadius or 4
 end
+
+GalaxObsidian.Signals = {}
+GalaxObsidian.UnloadCallbacks = {}
+
+function GalaxObsidian:GiveSignal(signal)
+    if not signal then return nil end
+    self.Signals = self.Signals or {}
+    self.Signals[#self.Signals + 1] = signal
+    if self.ActiveWindow then
+        self.ActiveWindow.Signals = self.ActiveWindow.Signals or {}
+        self.ActiveWindow.Signals[#self.ActiveWindow.Signals + 1] = signal
+    end
+    return signal
+end
+
+function GalaxObsidian:OnUnload(callback)
+    if type(callback) == "function" then
+        self.UnloadCallbacks = self.UnloadCallbacks or {}
+        self.UnloadCallbacks[#self.UnloadCallbacks + 1] = callback
+    end
+end
+
+function GalaxObsidian:SetWatermark(text)
+    self.WatermarkText = tostring(text or "")
+    if self.ActiveWindow then
+        self.ActiveWindow:SetWatermark(text)
+    end
+end
+
+function GalaxObsidian:SetWatermarkVisibility(visible)
+    self.WatermarkVisible = visible == true
+    if self.ActiveWindow then
+        self.ActiveWindow:SetWatermarkVisibility(visible)
+    end
+end
+
+function GalaxObsidian:SetNotifySide(side)
+    if self.ActiveWindow then
+        self.ActiveWindow:SetNotifySide(side)
+    end
+end
+
+function GalaxObsidian:Unload()
+    if self.Unloading then return end
+    self.Unloading = true
+
+    if type(self.UnloadCallbacks) == "table" then
+        for _, cb in ipairs(self.UnloadCallbacks) do
+            pcall(cb)
+        end
+        self.UnloadCallbacks = {}
+    end
+
+    if type(self.Signals) == "table" then
+        for _, conn in ipairs(self.Signals) do
+            if type(conn) == "table" and type(conn.Disconnect) == "function" then
+                pcall(function() conn:Disconnect() end)
+            elseif type(conn) == "userdata" and type(conn.Disconnect) == "function" then
+                pcall(function() conn:Disconnect() end)
+            end
+        end
+        self.Signals = {}
+    end
+
+    if self.ActiveWindow then
+        if type(self.ActiveWindow.Destroy) == "function" then
+            self.ActiveWindow:Destroy()
+        end
+        self.ActiveWindow = nil
+    end
+
+    if _G.GalaxObsidianActiveWindow and _G.GalaxObsidianActiveWindow ~= self.ActiveWindow then
+        if type(_G.GalaxObsidianActiveWindow.Destroy) == "function" then
+            _G.GalaxObsidianActiveWindow:Destroy()
+        end
+        _G.GalaxObsidianActiveWindow = nil
+    end
+
+    pcall(function()
+        setrobloxinput(true)
+    end)
+
+    if type(self.Options) == "table" then
+        table.clear(self.Options)
+    end
+    if type(self.Toggles) == "table" then
+        table.clear(self.Toggles)
+    end
+
+    self.Unloading = false
+end
+
+GalaxObsidian.Destroy = GalaxObsidian.Unload
+
 _G.Galax = _G.Galax or {}
 _G.Galax["Library.lua"] = GalaxObsidian
 
