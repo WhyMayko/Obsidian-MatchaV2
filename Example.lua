@@ -441,11 +441,13 @@ ScrollGroup:AddButton({
 })
 
 local FullGroup = Tabs.Main:AddFullGroupbox("Community & Server Information")
+local localPlayer = game:GetService("Players").LocalPlayer
+local playerName = localPlayer and localPlayer.Name or "User"
 FullGroup:AddInfoCard({
-    Title = "Hello, " .. tostring(game:GetService("Players").LocalPlayer.Name),
+    Title = "Hello, " .. playerName,
     Badge = "Tester",
-    Subtitle = tostring(game:GetService("Players").LocalPlayer.Name) .. " - GalaxHub Script",
-    Avatar = game:GetService("Players").LocalPlayer.UserId,
+    Subtitle = playerName .. " - GalaxHub Script",
+    Avatar = nil,
     ButtonText = "Discord",
     ButtonSubtext = "Copy link",
     ButtonIcon = "copy",
@@ -521,7 +523,7 @@ task.spawn(function()
             startupLoading.Sidebar:AddLabel("Obsidian Matcha")
             startupLoading.Sidebar:AddDivider()
             startupLoading.Sidebar:AddValue("Version: v2")
-            startupLoading.Sidebar:AddValue("User: " .. tostring(game:GetService("Players").LocalPlayer.Name))
+            startupLoading.Sidebar:AddValue("User: " .. tostring(playerName))
         end
         startupLoading:SetDescription(description)
         startupLoading:SetCurrentStep(step)
