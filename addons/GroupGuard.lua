@@ -210,14 +210,28 @@ function GroupGuard:BuildSection(tab)
 end
 
 function GroupGuard:RefreshRanks()
-	local handle = self.Library.Options and self.Library.Options.GroupGuard_Ranks
+	local handle = self.Library and self.Library.Options and self.Library.Options.GroupGuard_Ranks
 	if not handle then
 		return
 	end
 	handle:SetValues(self:Ranks())
 end
 
+function GroupGuard:BuildTab(window, name, icon, groupId)
+	assert(window, "GroupGuard:BuildTab requires a Window!")
+	local tab = window:AddTab(name or "Group Guard", icon or "shield")
+	self:SetLibrary(window.Library or (_G.Galax and _G.Galax.Library) or self.Library)
+	if groupId then
+		self:SetGroup(groupId)
+	end
+	self:BuildSection(tab)
+	return tab
+end
+
+GroupGuard.ApplyToTab = GroupGuard.BuildSection
+
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/GroupGuard.lua"] = GroupGuard
+_G.Galax.GroupGuard = GroupGuard
 
 return GroupGuard

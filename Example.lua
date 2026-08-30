@@ -52,7 +52,7 @@ startupLoading:SetErrorButtons({
 local Tabs = {
     Main = Window:AddTab("Main", "user"),
     Key = Window:AddKeyTab("Key System"),
-    Webhook = Window:AddTab("Webhook", "send"),
+    Webhook = Window:AddWebhookTab("Webhook", "send"),
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
 
@@ -508,12 +508,9 @@ EssentialsManager:BuildSection(Tabs["UI Settings"])
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
-WebhookManager:SetLibrary(Library)
 
 ThemeManager:SetFolder("Galax/Obsidian/Settings")
 SaveManager:SetFolder("Galax/Obsidian/Settings")
 
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
 ThemeManager:ApplyToTab(Tabs["UI Settings"])
-
-WebhookManager:BuildSection(Tabs.Webhook)
