@@ -58,13 +58,6 @@ local Tabs = {
 Library:SetWatermark("Galax Hub | Obsidian Matcha V2")
 Library:SetWatermarkVisibility(true)
 
-Tabs.Main:UpdateWarningBox({
-    Title = "GalaxHub V2 System",
-    Text = "All features loaded. Support for WarningBox, Groupboxes, Tabboxes, Addons and auto-cleanup active!",
-    Visible = true,
-    IsNormal = true,
-})
-
 local MainLeft = Tabs.Main:AddLeftGroupbox("Groupbox", "boxes")
 local MainRight = Tabs.Main:AddRightGroupbox("Dropdowns")
 
@@ -437,44 +430,6 @@ ScrollGroup:AddButton({
             end
             Loading:Destroy()
         end)
-    end,
-})
-
-local localPlayer = game:GetService("Players").LocalPlayer
-local playerName = localPlayer and localPlayer.Name or "User"
-
-local UserGroup = Tabs.Main:AddLeftGroupbox("User", "user")
-UserGroup:AddLabel("Logged in as: " .. playerName)
-UserGroup:AddLabel("Role: Tester")
-UserGroup:AddDivider()
-UserGroup:AddButton({
-    Text = "Join Discord",
-    Func = function()
-        pcall(function() setclipboard("https://discord.gg/galaxhub") end)
-        Library:Notify({
-            Title = "Discord",
-            Description = "Copied https://discord.gg/galaxhub to clipboard!",
-            Time = 3,
-        })
-    end,
-})
-
-local ServerGroup = Tabs.Main:AddRightGroupbox("Server", "activity")
-local players = game:GetService("Players")
-local list = players and players:GetPlayers()
-ServerGroup:AddLabel("Players online: " .. tostring(list and #list or 1))
-ServerGroup:AddLabel("Region: Brazil")
-ServerGroup:AddLabel("Server Ping: 32 ms")
-ServerGroup:AddDivider()
-ServerGroup:AddButton({
-    Text = "Copy Job ID",
-    Func = function()
-        pcall(function() setclipboard(tostring(game.JobId or "")) end)
-        Library:Notify({
-            Title = "Job ID",
-            Description = "Copied JobId to clipboard!",
-            Time = 3,
-        })
     end,
 })
 
