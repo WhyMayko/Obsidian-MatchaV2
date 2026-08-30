@@ -458,10 +458,10 @@ FullGroup:AddInfoCard({
         })
     end,
     Items = {
-        { Label = "Players", Value = function() local plrs = game:GetService("Players"); return tostring(plrs and #plrs:GetPlayers() or 1) .. " online" end },
+        { Label = "Players", Value = function() local plrs = game:GetService("Players"); local list = plrs and plrs:GetPlayers(); return tostring(list and #list or 1) .. " online" end },
         { Label = "Region", Value = "Brazil" },
-        { Label = "FPS", Value = function() return tostring(math.floor(workspace:GetRealPhysicsFPS() or 60)) end },
-        { Label = "Ping", Value = function() local st = game:GetService("Stats"); local item = st and st.Network and st.Network.ServerStatsItem and st.Network.ServerStatsItem["Data Ping"]; return tostring(math.floor(item and item:GetValue() or 30)) .. " ms" end },
+        { Label = "FPS", Value = "60 fps" },
+        { Label = "Ping", Value = "32 ms" },
     },
 })
 
@@ -487,7 +487,7 @@ end, false, "panel-left")
 
 local StatsMenu, StatsContainer = Library:AddDraggableMenu("Stats")
 StatsContainer:AddLabel("Drawing overlay")
-local performanceValue = StatsContainer:AddValue("0 fps | 0 ms")
+local performanceValue = StatsContainer:AddValue("0 fps | 32 ms")
 StatsContainer:AddValue("Lucide: lazy")
 StatsContainer:AddButton("Close", function()
     StatsMenu:SetVisible(false)
@@ -501,10 +501,7 @@ local performanceConnection = game:GetService("RunService").RenderStepped:Connec
     local elapsed = now - lastPerformanceUpdate
     if elapsed >= 1 then
         local fps = math.floor(frameCount / elapsed + 0.5)
-        local stats = game:GetService("Stats")
-        local pingItem = stats and stats.Network and stats.Network.ServerStatsItem and stats.Network.ServerStatsItem["Data Ping"]
-        local ping = math.floor(pingItem and pingItem:GetValue() or 30)
-        performanceValue:SetText(tostring(fps) .. " fps | " .. tostring(ping) .. " ms")
+        performanceValue:SetText(tostring(fps) .. " fps | 32 ms")
         frameCount = 0
         lastPerformanceUpdate = now
     end

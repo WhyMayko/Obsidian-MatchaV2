@@ -4105,10 +4105,10 @@ function GalaxObsidian:CreateWindow(options)
         self:_text(rightHeader, rightX, y + pad + math.floor(2 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, z + 3)
 
         local defaultItems = {
-            { Label = "Players", Value = function() local plrs = game:GetService("Players"); return tostring(plrs and #plrs:GetPlayers() or 1) .. " online" end },
+            { Label = "Players", Value = function() local plrs = game:GetService("Players"); local list = plrs and plrs:GetPlayers(); return tostring(list and #list or 1) .. " online" end },
             { Label = "Region", Value = "Brazil" },
-            { Label = "FPS", Value = function() return tostring(math.floor(workspace:GetRealPhysicsFPS() or 60)) end },
-            { Label = "Ping", Value = function() local st = game:GetService("Stats"); local item = st and st.Network and st.Network.ServerStatsItem and st.Network.ServerStatsItem["Data Ping"]; return tostring(math.floor(item and item:GetValue() or 30)) .. " ms" end },
+            { Label = "FPS", Value = "60 fps" },
+            { Label = "Ping", Value = "30 ms" },
         }
         local items = widget.items or defaultItems
         local itemStartY = y + pad + math.floor(24 * scale)
@@ -4117,7 +4117,13 @@ function GalaxObsidian:CreateWindow(options)
         for idx, item in ipairs(items) do
             local rowY = itemStartY + (idx - 1) * rowH
             local label = tostring(item.Label or "")
-            local val = type(item.Value) == "function" and tostring(item.Value()) or tostring(item.Value or "")
+            local val = ""
+            if type(item.Value) == "function" then
+                local ok, res = pcall(item.Value)
+                val = ok and tostring(res) or "-"
+            else
+                val = tostring(item.Value or "")
+            end
             self:_text(label, rightX, rowY - _yOfs(scale), Theme.Muted, 13, Drawing.Fonts.Monospace, false, true, z + 3)
             local valW = estimateTextWidth(val, 13, Drawing.Fonts.Monospace)
             self:_text(val, rightX + rightHalfW - valW, rowY - _yOfs(scale), Theme.Text, 13, Drawing.Fonts.Monospace, false, true, z + 3)
