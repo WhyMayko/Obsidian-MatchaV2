@@ -1859,7 +1859,8 @@ function GalaxObsidian:CreateWindow(options)
     end
     function Window:_hideUnused()
         for kind, list in pairs(self.Pool) do
-            for i = self.Index[kind] + 1, self.HighWater[kind] do
+            local count = #list
+            for i = self.Index[kind] + 1, count do
                 local object = list[i]
                 if object and object.Visible then
                     object.Visible = false
@@ -1891,6 +1892,9 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:_get(kind)
+        if not self.Running or self.Destroyed then
+            return nil
+        end
         self.Index[kind] = self.Index[kind] + 1
         local max = self.MaxPoolSize[kind] or 9999
         if self.Index[kind] > max then
@@ -1949,6 +1953,7 @@ function GalaxObsidian:CreateWindow(options)
             return nil
         end
         local object = self:_get("Square")
+        if not object then return nil end
         local meta = drawingMeta[object]
         setDrawingPosition(object, meta, x, y)
         setDrawingSize(object, meta, w, h)
@@ -1969,6 +1974,7 @@ function GalaxObsidian:CreateWindow(options)
             return nil
         end
         local object = self:_get("Text")
+        if not object then return nil end
         local meta = drawingMeta[object]
         local resolvedFont = GalaxObsidian.Font
         local nativeCenter = center == "native"
@@ -1996,6 +2002,7 @@ function GalaxObsidian:CreateWindow(options)
             return nil
         end
         local object = self:_get("Line")
+        if not object then return nil end
         local meta = drawingMeta[object]
         setDrawingLine(object, meta, x1, y1, x2, y2)
         if color then
@@ -2012,6 +2019,7 @@ function GalaxObsidian:CreateWindow(options)
             return nil
         end
         local object = self:_get("Circle")
+        if not object then return nil end
         local meta = drawingMeta[object]
         setDrawingPosition(object, meta, x, y)
         setDrawingValue(object, meta, "Radius", radius)
@@ -2042,6 +2050,7 @@ function GalaxObsidian:CreateWindow(options)
             return nil
         end
         local object = self:_get("Image")
+        if not object then return nil end
         local meta = drawingMeta[object]
         setDrawingValue(object, meta, "Data", data)
         setDrawingPosition(object, meta, x, y)
@@ -2528,8 +2537,16 @@ function GalaxObsidian:CreateWindow(options)
     function Window:_setAllVisible(visible)
         for _, list in pairs(self.Pool) do
             for _, object in ipairs(list) do
-                object.Visible = visible
+                if object then
+                    object.Visible = visible
+                end
             end
+        end
+        if self._sidebarImageDrawing then
+            self._sidebarImageDrawing.Visible = visible and self.SidebarImageReady == true
+        end
+        if self._titleIconDrawing then
+            self._titleIconDrawing.Visible = visible and self.IconReady == true
         end
     end
     function Window:_clearInteraction()
@@ -5486,6 +5503,9 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:_render()
+        if not self.Running or self.Destroyed then
+            return nil
+        end
         self:_resetPool()
         self._renderingMainWindow = false
         self.BlockClicks = false
@@ -5679,8 +5699,23 @@ function GalaxObsidian:CreateWindow(options)
         local totalW = iconW + gap + chromeTitleW
         local startX = x + math.floor((sidebarW - totalW) / 2)
         if iconW > 0 then
-            self:_image(self.IconData, startX, y + math.floor((topH - iconH) / 2), iconW, iconH, 0, chromeZ + 4)
+            if not self._titleIconDrawing then
+                self._titleIconDrawing = Drawing.new("Image")
+            end
+            local iconObj = self._titleIconDrawing
+            if iconObj then
+                if self._titleIconLastData ~= self.IconData then
+                    iconObj.Data = self.IconData
+                    self._titleIconLastData = self.IconData
+                end
+                iconObj.Position = Vector2.new(startX, y + math.floor((topH - iconH) / 2))
+                iconObj.Size = Vector2.new(iconW, iconH)
+                iconObj.ZIndex = chromeZ + 4
+                iconObj.Visible = true
+            end
             startX = startX + iconW + gap
+        elseif self._titleIconDrawing then
+            self._titleIconDrawing.Visible = false
         end
         if chromeTitleW > 0 then
             self:_text(
@@ -5765,6 +5800,9 @@ function GalaxObsidian:CreateWindow(options)
             chromeTabY = chromeTabY + tabEntryH
         end
         if self.SidebarImageReady and self.SidebarImageData then
+            if not self._sidebarImageDrawing then
+                self._sidebarImageDrawing = Drawing.new("Image")
+            end
             local maxH = h - topH - bottomH
 
             local imgScale = tonumber(self.SidebarImageScale) or 1.0
@@ -5795,7 +5833,19 @@ function GalaxObsidian:CreateWindow(options)
                 imgX = x + math.floor((sidebarW - imgW) / 2)
                 imgY = y + h - bottomH - imgH
             end
-            self:_image(self.SidebarImageData, imgX, imgY, imgW, imgH, 0, chromeZ + 3)
+            local imgObj = self._sidebarImageDrawing
+            if imgObj then
+                if self._sidebarImageLastData ~= self.SidebarImageData then
+                    imgObj.Data = self.SidebarImageData
+                    self._sidebarImageLastData = self.SidebarImageData
+                end
+                imgObj.Position = Vector2.new(imgX, imgY)
+                imgObj.Size = Vector2.new(imgW, imgH)
+                imgObj.ZIndex = chromeZ + 3
+                imgObj.Visible = true
+            end
+        elseif self._sidebarImageDrawing then
+            self._sidebarImageDrawing.Visible = false
         end
         if self.ActiveTab then
             self:_renderSections(self.ActiveTab, x + sidebarW, y + topH, w - sidebarW, h - topH - bottomH, 10, y, y + h)
@@ -6148,6 +6198,24 @@ function GalaxObsidian:CreateWindow(options)
                 end
             end
             self.Signals = {}
+        end
+
+        if self._sidebarImageDrawing then
+            pcall(function()
+                self._sidebarImageDrawing.Visible = false
+                self._sidebarImageDrawing:Remove()
+            end)
+            self._sidebarImageDrawing = nil
+            self._sidebarImageLastData = nil
+        end
+
+        if self._titleIconDrawing then
+            pcall(function()
+                self._titleIconDrawing.Visible = false
+                self._titleIconDrawing:Remove()
+            end)
+            self._titleIconDrawing = nil
+            self._titleIconLastData = nil
         end
 
         for _, list in pairs(self.Pool) do
@@ -7143,15 +7211,17 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     task.spawn(function()
-        while Window.Running do
+        while Window.Running and not Window.Destroyed do
             local idleTime = tick() - Window._lastActivity
             task.wait(idleTime > 0.5 and 0.033 or 0.016)
+            if not Window.Running or Window.Destroyed then break end
             if isrbxactive() then
                 Window:_updateInput()
                 local ok, err = pcall(function()
                     Window:_render()
                 end)
                 if not ok then
+                    pcall(function() Window:_hideUnused() end)
                     if Window._lastRenderError ~= err then
                         warn("[GalaxObsidian] Render error: " .. tostring(err))
                         Window._lastRenderError = err
@@ -7159,6 +7229,7 @@ function GalaxObsidian:CreateWindow(options)
                 else
                     Window._lastRenderError = nil
                 end
+                if not Window.Running or Window.Destroyed then break end
                 Window:_handleGlobalInput()
                 Window:_updateInputBlock()
             else
@@ -7381,6 +7452,14 @@ function GalaxObsidian:Unload()
         _G.GalaxObsidianActiveWindow = nil
     end
 
+    for key, probe in pairs(measureProbes) do
+        pcall(function()
+            probe.Visible = false
+            probe:Remove()
+        end)
+    end
+    table.clear(measureProbes)
+
     pcall(function()
         setrobloxinput(true)
     end)
@@ -7392,6 +7471,7 @@ function GalaxObsidian:Unload()
         table.clear(self.Toggles)
     end
 
+    self.Unloaded = true
     self.Unloading = false
 end
 
