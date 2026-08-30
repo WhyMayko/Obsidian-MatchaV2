@@ -339,18 +339,12 @@ function WebhookManager:BuildWebhookSection(tab)
 
 	local setupSection = tab:AddLeftGroupbox("Webhook Setup")
 
-	setupSection:AddLabel("Click the button below to copy the setup code. Paste it into your script with your Discord webhook URL.", true)
+	setupSection:AddLabel("Copy the code below, paste it into your script with your Discord webhook URL and execute it.", true)
 
 	setupSection:AddButton({
 		Text = "Copy Webhook Addon Code",
 		Func = function()
-			local snippet = [[-- Obsidian Matcha Webhook Addon Setup
-local WebhookManager = _G.Galax and _G.Galax.WebhookManager
-if not WebhookManager then
-    WebhookManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/addons/WebhookManager.lua"))()
-end
-WebhookManager:Add("MyWebhook", "PASTE_YOUR_DISCORD_WEBHOOK_URL_HERE")
-]]
+			local snippet = [[WebhookManager:Add("MyWebhook", "PASTE_YOUR_DISCORD_WEBHOOK_URL_HERE")]]
 			pcall(function() setclipboard(snippet) end)
 			Library:Notify({
 				Title = "Webhook Addon",
@@ -501,22 +495,6 @@ WebhookManager.BuildSection = WebhookManager.BuildWebhookSection
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/WebhookManager.lua"] = WebhookManager
 _G.Galax.WebhookManager = WebhookManager
-
-_G.webhook = _G.webhook or {}
-_G.webhook.load = function(name, url)
-	local wm = _G.Galax and (_G.Galax.WebhookManager or _G.Galax["addons/WebhookManager.lua"])
-	if not wm then
-		warn("webhook.load: WebhookManager not loaded!")
-		return false
-	end
-	local ok, err = wm:Add(name, url)
-	if not ok then
-		warn("webhook.load: " .. tostring(err))
-		return false
-	end
-	print(string.format('webhook.load: loaded %q', name))
-	return true
-end
 
 ensureFolder(WebhookFolder)
 
