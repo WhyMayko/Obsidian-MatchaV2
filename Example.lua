@@ -2,7 +2,7 @@ local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/
 
 loadstring(game:HttpGet(repo .. "Loader.lua"))()
 
-local Library, ThemeManager, SaveManager, EssentialsManager = _G.Galax()
+local Library, ThemeManager, SaveManager, EssentialsManager, WebhookManager = _G.Galax()
 
 local Options = Library.Options
 local Toggles = Library.Toggles
@@ -542,7 +542,11 @@ EssentialsManager:BuildSection(Tabs["UI Settings"])
 
 ThemeManager:SetLibrary(Library)
 SaveManager:SetLibrary(Library)
+WebhookManager:SetLibrary(Library)
+
 ThemeManager:SetFolder("Galax/Obsidian/Settings")
 SaveManager:SetFolder("Galax/Obsidian/Settings")
+
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
+WebhookManager:BuildSection(Tabs["UI Settings"])
 ThemeManager:ApplyToTab(Tabs["UI Settings"])

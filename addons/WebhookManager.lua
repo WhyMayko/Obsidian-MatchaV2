@@ -2,10 +2,8 @@ local WebhookManager = {
 	Library = nil,
 	Webhooks = {},
 	Templates = {},
-	DefaultWebhook = { Name = "Galax Hub - Logs", Url = "https://galax-team.vercel.app/Webhook" },
-	DefaultAvatar = "https://github.com/WhyMayko/Matcha-Scripts/blob/main/Debug/Galax-Dex/ui/Logo.png?raw=true",
+	DefaultWebhook = nil,
 	AutoloadWebhook = nil,
-	ProxyUrl = "https://galax-team.vercel.app/Webhook",
 }
 
 local HttpService = game:GetService("HttpService")
@@ -54,19 +52,15 @@ local function readTable(path)
 
 	local source = readfile(path)
 	if type(source) ~= "string" then
-		error("WebhookManager: file read failed for " .. path, 2)
+		error("WebhookManager: file read failed for " .. path .. "!", 2)
 	end
 
 	local ok, data = pcall(function() return HttpService:JSONDecode(source) end)
-	if not ok then
-		error("WebhookManager: failed to decode JSON from " .. path, 2)
+	if not ok or type(data) ~= "table" then
+		return nil
 	end
 
-	if type(data) == "table" then
-		return data
-	end
-
-	error("WebhookManager: decoded JSON is not a table for " .. path, 2)
+	return data
 end
 
 local function deepCopy(t)
@@ -101,8 +95,8 @@ function WebhookManager:SetLibrary(library)
 end
 
 function WebhookManager:Add(name, url)
-	if not name or not url then
-		return false, "name and url required"
+	if not name or not url or url == "" then
+		return false, "Name and URL are required!"
 	end
 	self.Webhooks[name] = { Name = name, Url = url }
 
@@ -113,12 +107,16 @@ function WebhookManager:Add(name, url)
 		return false, err
 	end
 
+	if not self.LoadedWebhook then
+		self.LoadedWebhook = self.Webhooks[name]
+	end
+
 	return true
 end
 
 function WebhookManager:AddTemplate(name, template)
 	if not name or not template then
-		return false, "name and template required"
+		return false, "Name and template are required!"
 	end
 	self.Templates[name] = deepCopy(template)
 	return true
@@ -139,19 +137,19 @@ function WebhookManager:GetCurrent()
 			return data
 		end
 	end
-	return self.DefaultWebhook
+	return nil
 end
 
 function WebhookManager:Compile(templateName, variables)
 	local template = self.Templates[templateName]
 	if not template then
-		return nil, "template not found: " .. tostring(templateName)
+		return nil, "Template not found: " .. tostring(templateName) .. "!"
 	end
 
 	local payload = compileTable(template, variables or {})
 
 	if payload.embeds then
-		for i, embed in ipairs(payload.embeds) do
+		for _, embed in ipairs(payload.embeds) do
 			if type(embed) == "table" then
 				if embed.footer and type(embed.footer) == "table" then
 					embed.footer.text = compilePlaceholders(embed.footer.text, variables or {})
@@ -168,45 +166,33 @@ end
 
 function WebhookManager:SendPayload(url, payload)
 	if not url or url == "" then
-		return false, "no webhook url"
+		return false, "No webhook URL provided!"
 	end
 
 	local body = HttpService:JSONEncode(payload)
 	local resp = httppost(url, body, "application/json", {
+		["Content-Type"] = "application/json",
 		["User-Agent"] = "Roblox/WinInet",
 	})
 	if resp == "" then
-		return false, "request failed or unreachable host"
+		return false, "Request failed or unreachable host!"
 	end
 
-	local ok, data = pcall(function()
-		return HttpService:JSONDecode(resp)
-	end)
-	if ok and type(data) == "table" and data.ok == true then
-		return true, "sent"
-	end
-
-	local errMsg = "server error"
-	if ok and type(data) == "table" and data.error then
-		errMsg = data.error
-	end
-	return false, errMsg
+	return true, "Sent successfully!"
 end
 
 function WebhookManager:Send(webhookName, templateName, variables)
+	local current = webhookName and self.Webhooks[webhookName] or self:GetCurrent()
+	if not current or not current.Url or current.Url == "" then
+		return false, "No active webhook URL!"
+	end
+
 	local payload, err = self:Compile(templateName, variables)
 	if not payload then
 		return false, err
 	end
 
-	if not payload.username then
-		payload.username = self.DefaultWebhook.Name
-	end
-	if not payload.avatar_url then
-		payload.avatar_url = self.DefaultAvatar
-	end
-
-	return self:SendPayload(self.ProxyUrl, payload)
+	return self:SendPayload(current.Url, payload)
 end
 
 function WebhookManager:SendRaw(url, payload)
@@ -214,11 +200,30 @@ function WebhookManager:SendRaw(url, payload)
 end
 
 function WebhookManager:Test(webhookName, message)
-	return self:SendPayload(self.ProxyUrl, {
-		content = tostring(message or "Test from GalaxHub"),
-		username = self.DefaultWebhook.Name,
-		avatar_url = self.DefaultAvatar,
-	})
+	local current = webhookName and self.Webhooks[webhookName] or self:GetCurrent()
+	if not current or not current.Url or current.Url == "" then
+		return false, "No webhook loaded!"
+	end
+
+	local user = game:GetService("Players").LocalPlayer
+	local payload = {
+		content = tostring(message or "Hello from Obsidian Matcha V2!"),
+		embeds = {
+			{
+				title = "Webhook Test",
+				description = tostring(message or "Hello from Obsidian Matcha V2!"),
+				color = 0x8aa2ff,
+				fields = {
+					{ name = "User", value = user and user.Name or "Unknown", inline = true },
+					{ name = "UserId", value = user and tostring(user.UserId) or "0", inline = true },
+					{ name = "PlaceId", value = tostring(game.PlaceId or 0), inline = true },
+				},
+				footer = { text = "Obsidian Matcha V2" },
+			}
+		}
+	}
+
+	return self:SendPayload(current.Url, payload)
 end
 
 function WebhookManager:Refresh()
@@ -245,7 +250,7 @@ end
 
 function WebhookManager:Delete(name)
 	if not name then
-		return false, "no name"
+		return false, "No webhook name provided!"
 	end
 
 	self.Webhooks[name] = nil
@@ -256,6 +261,10 @@ function WebhookManager:Delete(name)
 
 	if self.AutoloadWebhook and self.AutoloadWebhook.Name == name then
 		self:ResetDefault()
+	end
+
+	if self.LoadedWebhook and self.LoadedWebhook.Name == name then
+		self.LoadedWebhook = nil
 	end
 
 	return true
@@ -278,7 +287,7 @@ function WebhookManager:GetAutoloadWebhook()
 	end
 
 	if not self.AutoloadWebhook then
-		return self.DefaultWebhook.Name
+		return nil
 	end
 
 	return self.AutoloadWebhook.Name
@@ -286,12 +295,12 @@ end
 
 function WebhookManager:SetDefault(name)
 	if not name then
-		return false, "no name"
+		return false, "No webhook name provided!"
 	end
 
 	local data = self.Webhooks[name]
 	if not data then
-		return false, "webhook not found"
+		return false, "Webhook not found!"
 	end
 
 	self.AutoloadWebhook = data
@@ -300,61 +309,98 @@ end
 
 function WebhookManager:ResetDefault()
 	self.AutoloadWebhook = nil
-	self.LoadedWebhook = nil
-
-	writeTable(DefaultWebhookFile, self.DefaultWebhook)
-
+	if isfile(DefaultWebhookFile) then
+		delfile(DefaultWebhookFile)
+	end
 	return true
 end
 
 function WebhookManager:LoadAutoload()
 	self:GetAutoloadWebhook()
-
 	if self.AutoloadWebhook then
+		self.LoadedWebhook = self.AutoloadWebhook
 		return self.AutoloadWebhook
 	end
-
-	return self.DefaultWebhook
+	return nil
 end
 
 function WebhookManager:BuildWebhookSection(tab)
 	local Library = self.Library
 	if not Library then
-		error("WebhookManager:BuildWebhookSection requires Library (call SetLibrary first)", 2)
+		error("WebhookManager:BuildWebhookSection requires Library (call SetLibrary first)!", 2)
 	end
 
-	local saveManager = _G.Galax and _G.Galax["addons/SaveManager.lua"]
+	local saveManager = _G.Galax and _G.Galax.SaveManager
 	if saveManager then
 		saveManager:SetIgnoreIndexes({ "WebhookManager_TestMessage" })
 	end
 
 	local Options = Library.Options
 
-	local testSection = tab:AddLeftGroupbox("Test")
+	local setupSection = tab:AddLeftGroupbox("Webhook Setup")
 
-	testSection:AddInput("WebhookManager_TestMessage", {
-		Text = "Test message",
-		Placeholder = "Enter a test message...",
+	setupSection:AddLabel("Click the button below to copy the setup code. Paste it into your script with your Discord webhook URL.", true)
+
+	setupSection:AddButton({
+		Text = "Copy Webhook Addon Code",
+		Func = function()
+			local snippet = [[-- Obsidian Matcha Webhook Addon Setup
+local WebhookManager = _G.Galax and _G.Galax.WebhookManager
+if not WebhookManager then
+    WebhookManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/addons/WebhookManager.lua"))()
+end
+WebhookManager:Add("MyWebhook", "PASTE_YOUR_DISCORD_WEBHOOK_URL_HERE")
+]]
+			pcall(function() setclipboard(snippet) end)
+			Library:Notify({
+				Title = "Webhook Addon",
+				Description = "Copied setup code to clipboard!",
+				Time = 4,
+			})
+		end,
 	})
 
-	testSection:AddButton("Send Test", function()
-		local current = self:GetCurrent()
-		if not current then
-			error("No webhook loaded")
-		end
+	setupSection:AddDivider({ Text = "Test Webhook" })
 
-		local message = Options and Options.WebhookManager_TestMessage and Options.WebhookManager_TestMessage.Value or "Test from GalaxHub"
-		if not message or message == "" then
-			message = "Test from GalaxHub"
-		end
+	setupSection:AddInput("WebhookManager_TestMessage", {
+		Text = "Test Message",
+		Placeholder = "Hello from Obsidian Matcha V2!",
+	})
 
-		local ok, err = self:Test(nil, message)
-		if ok then
-			Library:Notify("Webhook: Test sent", 4)
-		else
-			error("Test failed: " .. tostring(err))
-		end
-	end)
+	setupSection:AddButton({
+		Text = "Send Test Message",
+		Func = function()
+			local current = self:GetCurrent()
+			if not current then
+				Library:Notify({
+					Title = "Webhook",
+					Description = "No webhook loaded! Load a webhook first.",
+					Time = 4,
+				})
+				return
+			end
+
+			local message = Options and Options.WebhookManager_TestMessage and Options.WebhookManager_TestMessage.Value or "Hello from Obsidian Matcha V2!"
+			if not message or message == "" then
+				message = "Hello from Obsidian Matcha V2!"
+			end
+
+			local ok, err = self:Test(nil, message)
+			if ok then
+				Library:Notify({
+					Title = "Webhook",
+					Description = "Test sent successfully!",
+					Time = 4,
+				})
+			else
+				Library:Notify({
+					Title = "Webhook Error",
+					Description = "Failed to send: " .. tostring(err),
+					Time = 5,
+				})
+			end
+		end,
+	})
 
 	local function refreshWebhookList()
 		if Options.WebhookManager_WebhookList then
@@ -367,13 +413,13 @@ function WebhookManager:BuildWebhookSection(tab)
 		if self.WebhookCurrentLabel then
 			local current = self:GetCurrent()
 			local name = current and current.Name or "None"
-			self.WebhookCurrentLabel:SetText("Current webhook: " .. tostring(name))
+			self.WebhookCurrentLabel:SetText("Current: " .. tostring(name))
 		end
 	end
 
-	local webhookSection = tab:AddRightGroupbox("Webhooks")
+	local webhookSection = tab:AddRightGroupbox("Saved Webhooks")
 
-	self.WebhookCurrentLabel = webhookSection:AddLabel("Current webhook: " .. tostring(self:GetCurrent() and self:GetCurrent().Name or "None"))
+	self.WebhookCurrentLabel = webhookSection:AddLabel("Current: " .. tostring(self:GetCurrent() and self:GetCurrent().Name or "None"))
 
 	webhookSection:AddDropdown("WebhookManager_WebhookList", {
 		Text = "Webhook list",
@@ -381,24 +427,26 @@ function WebhookManager:BuildWebhookSection(tab)
 		AllowNull = true,
 	})
 
-	webhookSection:AddButton("Load", function()
+	webhookSection:AddButton("Load Webhook", function()
 		local name = Options.WebhookManager_WebhookList:Get()
 		if not name then
-			error("No webhook selected")
+			Library:Notify({ Title = "Webhook", Description = "No webhook selected!", Time = 3 })
+			return
 		end
 
 		local data = self.Webhooks[name]
 		if not data then
-			error("Webhook not found: " .. tostring(name))
+			Library:Notify({ Title = "Webhook", Description = "Webhook not found!", Time = 3 })
+			return
 		end
 
 		self.LoadedWebhook = data
-		Library:Notify(string.format("Loaded webhook %q", name), 4)
+		Library:Notify({ Title = "Webhook", Description = string.format("Loaded webhook %q", name), Time = 4 })
 		updateCurrentLabel()
 	end)
 
 	webhookSection:AddButton({
-		Text = "Delete",
+		Text = "Delete Webhook",
 		DoubleClick = true,
 		Func = function()
 			local name = Options.WebhookManager_WebhookList:Get()
@@ -408,55 +456,57 @@ function WebhookManager:BuildWebhookSection(tab)
 
 			local ok, err = self:Delete(name)
 			if not ok then
-				error("Failed to delete webhook: " .. tostring(err))
+				Library:Notify({ Title = "Webhook Error", Description = "Failed to delete: " .. tostring(err), Time = 4 })
+				return
 			end
 
-			if self.LoadedWebhook and self.LoadedWebhook.Name == name then
-				self.LoadedWebhook = nil
-			end
-
-			Library:Notify(string.format("Deleted webhook %q", name), 4)
+			Library:Notify({ Title = "Webhook", Description = string.format("Deleted webhook %q", name), Time = 4 })
 			refreshWebhookList()
 			updateCurrentLabel()
-		end
+		end,
 	})
 
-	webhookSection:AddButton("Refresh", function()
+	webhookSection:AddButton("Refresh List", function()
 		refreshWebhookList()
 	end)
 
-	webhookSection:AddButton("Set as autoload", function()
+	webhookSection:AddButton("Set as Autoload", function()
 		local name = Options.WebhookManager_WebhookList:Get()
 		if not name then
-			error("No webhook selected")
+			Library:Notify({ Title = "Webhook", Description = "No webhook selected!", Time = 3 })
+			return
 		end
 
 		local ok, err = self:SetDefault(name)
 		if not ok then
-			error("Failed to set autoload: " .. tostring(err))
+			Library:Notify({ Title = "Webhook Error", Description = "Failed to set autoload: " .. tostring(err), Time = 4 })
+			return
 		end
 
-		Library:Notify(string.format("Autoload set to %q", name), 4)
+		Library:Notify({ Title = "Webhook", Description = string.format("Autoload set to %q", name), Time = 4 })
 		updateCurrentLabel()
 	end)
 
-	webhookSection:AddButton("Reset autoload", function()
+	webhookSection:AddButton("Reset Autoload", function()
 		self:ResetDefault()
-		Library:Notify("Autoload reset to default", 4)
+		Library:Notify({ Title = "Webhook", Description = "Autoload reset.", Time = 4 })
 		updateCurrentLabel()
 	end)
 
 	self:LoadAutoload()
 end
 
+WebhookManager.BuildSection = WebhookManager.BuildWebhookSection
+
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/WebhookManager.lua"] = WebhookManager
+_G.Galax.WebhookManager = WebhookManager
 
 _G.webhook = _G.webhook or {}
 _G.webhook.load = function(name, url)
-	local wm = _G.Galax and _G.Galax["addons/WebhookManager.lua"]
+	local wm = _G.Galax and (_G.Galax.WebhookManager or _G.Galax["addons/WebhookManager.lua"])
 	if not wm then
-		warn("webhook.load: WebhookManager not loaded")
+		warn("webhook.load: WebhookManager not loaded!")
 		return false
 	end
 	local ok, err = wm:Add(name, url)
@@ -468,10 +518,6 @@ _G.webhook.load = function(name, url)
 	return true
 end
 
--- Ensure default webhook file exists
 ensureFolder(WebhookFolder)
-if not isfile(DefaultWebhookFile) then
-	writeTable(DefaultWebhookFile, WebhookManager.DefaultWebhook)
-end
 
 return WebhookManager

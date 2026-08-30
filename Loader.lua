@@ -60,32 +60,36 @@ function Loader:Load()
     local thememanager = loadModule("addons/ThemeManager.lua")
     local savemanager = loadModule("addons/SaveManager.lua")
     local essentialsmanager = loadModule("addons/EssentialsManager.lua")
+    local webhookmanager = loadModule("addons/WebhookManager.lua")
 
     library.ThemeManager = thememanager
     library.SaveManager = savemanager
     library.EssentialsManager = essentialsmanager
+    library.WebhookManager = webhookmanager
 
     _G.Galax["Library.lua"] = library
     _G.Galax["addons/ThemeManager.lua"] = thememanager
     _G.Galax["addons/SaveManager.lua"] = savemanager
     _G.Galax["addons/EssentialsManager.lua"] = essentialsmanager
+    _G.Galax["addons/WebhookManager.lua"] = webhookmanager
 
     _G.Galax.Library = library
     _G.Galax.ThemeManager = thememanager
     _G.Galax.SaveManager = savemanager
     _G.Galax.EssentialsManager = essentialsmanager
+    _G.Galax.WebhookManager = webhookmanager
 
-    return library, thememanager, savemanager, essentialsmanager
+    return library, thememanager, savemanager, essentialsmanager, webhookmanager
 end
 
 _G.Galax["Loader.lua"] = Loader
 _G.Galax.Get = function()
-    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager
+    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager
 end
 
 setmetatable(_G.Galax, {
     __call = function()
-        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager
+        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager
     end,
 })
 
