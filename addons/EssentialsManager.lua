@@ -57,21 +57,6 @@ function EssentialsManager:BuildSection(tab)
 		end,
 	})
 
-	MenuGroup:AddSlider("UICornerSlider", {
-		Text = "Corner Radius",
-		Default = 4,
-		Min = 0,
-		Max = 10,
-		Rounding = 0,
-		Callback = function(Value)
-			if not Library.ActiveWindow then
-				error("EssentialsManager: no active window for UICornerSlider", 2)
-			end
-			Library.CornerRadius = Value
-			Library.ActiveWindow:SetCornerRadius(Value)
-		end,
-	})
-
 	MenuGroup:AddDivider()
 
 	MenuGroup:AddLabel("Menu bind")

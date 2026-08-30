@@ -172,6 +172,7 @@ local function currentThemeSnapshot(Library, name)
 	theme.BottombarBorder = colorToHex(current.BottombarBorder)
 	theme.FooterText = colorToHex(current.FooterText)
 	theme.Transparency = window and window:GetTransparency() or 1
+	theme.CornerRadius = window and window:GetCornerRadius() or 4
 
 	return theme
 end
@@ -478,6 +479,20 @@ function ThemeManager:CreateThemeManager(groupbox)
 			if Library.ActiveWindow then
 				Library.ActiveWindow:SetTransparency(value / 100)
 			end
+		end,
+	})
+
+	groupbox:AddSlider("ThemeManager_CornerRadius", {
+		Text = "Corner radius",
+		Min = 0,
+		Max = 12,
+		Default = Library.ActiveWindow and Library.ActiveWindow:GetCornerRadius() or 4,
+		Rounding = 0,
+		Callback = function(value)
+			if Library.ActiveWindow then
+				Library.ActiveWindow:SetCornerRadius(value)
+			end
+			Library.CornerRadius = value
 		end,
 	})
 

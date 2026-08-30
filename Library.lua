@@ -6138,6 +6138,15 @@ function GalaxObsidian:CreateWindow(options)
         assert(value and value >= 0.1 and value <= 1, "UI transparency must be between 0.1 and 1!")
         self.UITransparency = value
     end
+    function Window:GetCornerRadius()
+        return self._cornerRadius or GalaxObsidian.CornerRadius or 4
+    end
+    function Window:SetCornerRadius(value)
+        value = tonumber(value) or 0
+        value = clamp(math.floor(value + 0.5), 0, 20)
+        self._cornerRadius = value
+        GalaxObsidian.CornerRadius = value
+    end
     function Window:GetTheme()
         local copy = {}
 
@@ -7341,6 +7350,19 @@ function GalaxObsidian:Notify(message, title, duration)
         return nil
     end
     return self.ActiveWindow:Notify(message, title, duration)
+end
+function GalaxObsidian:SetCornerRadius(value)
+    if self.ActiveWindow then
+        self.ActiveWindow:SetCornerRadius(value)
+    else
+        self.CornerRadius = tonumber(value) or 0
+    end
+end
+function GalaxObsidian:GetCornerRadius()
+    if self.ActiveWindow then
+        return self.ActiveWindow:GetCornerRadius()
+    end
+    return self.CornerRadius or 4
 end
 _G.Galax = _G.Galax or {}
 _G.Galax["Library.lua"] = GalaxObsidian
