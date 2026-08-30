@@ -494,7 +494,7 @@ task.spawn(function()
         end
         startupLoading:SetDescription(description)
         startupLoading:SetCurrentStep(step)
-        task.wait(1)
+        task.wait(0.35)
     end
     startupLoading:Continue()
 end)

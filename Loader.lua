@@ -52,9 +52,11 @@ local function loadAsset(path)
 end
 
 function Loader:Load()
-    for _, path in ipairs(self.CoreAssets) do
-        loadAsset(path)
-    end
+    task.spawn(function()
+        for _, path in ipairs(self.CoreAssets) do
+            loadAsset(path)
+        end
+    end)
 
     local library = loadModule("Library.lua")
     local thememanager = loadModule("addons/ThemeManager.lua")
