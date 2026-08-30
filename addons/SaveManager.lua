@@ -472,19 +472,21 @@ _G.community.loadConfig = function(name)
 		warn("community.loadConfig: name is required")
 		return
 	end
-	local url = CommunityRepo .. "configs/" .. tostring(name) .. ".txt"
-	local ok, source = pcall(game.HttpGet, game, url)
-	if not ok or not source or source == "" then
-		warn("community.loadConfig: failed to download '" .. name .. "'")
-		return
-	end
-	local path = ConfigFolder .. "/" .. tostring(name):gsub("[^%w%s_%-]", "_") .. ".txt"
-	local writeOk = pcall(writefile, path, source)
-	if not writeOk then
-		warn("community.loadConfig: failed to save file")
-		return
-	end
-	SaveManager:Load(name)
+	task.spawn(function()
+		local url = CommunityRepo .. "configs/" .. tostring(name) .. ".txt"
+		local ok, source = pcall(game.HttpGet, game, url)
+		if not ok or not source or source == "" then
+			warn("community.loadConfig: failed to download '" .. name .. "'")
+			return
+		end
+		local path = ConfigFolder .. "/" .. tostring(name):gsub("[^%w%s_%-]", "_") .. ".txt"
+		local writeOk = pcall(writefile, path, source)
+		if not writeOk then
+			warn("community.loadConfig: failed to save file")
+			return
+		end
+		SaveManager:Load(name)
+	end)
 end
 
 return SaveManager

@@ -661,25 +661,27 @@ _G.community.loadTheme = function(name)
 		warn("community.loadTheme: name is required")
 		return
 	end
-	local url = CommunityRepo .. "themes/" .. tostring(name) .. ".txt"
-	local ok, source = pcall(game.HttpGet, game, url)
-	if not ok or not source or source == "" then
-		warn("community.loadTheme: failed to download '" .. name .. "'")
-		return
-	end
-	local path = ThemeFolder .. "/" .. tostring(name):gsub("[^%w%s_%-]", "_") .. ".txt"
-	local writeOk = pcall(writefile, path, source)
-	if not writeOk then
-		warn("community.loadTheme: failed to save file")
-		return
-	end
-	local HttpService = game:GetService("HttpService")
-	local data = HttpService:JSONDecode(source)
-	if type(data) == "table" then
-		data.name = data.name or name
-		ThemeManager.CustomThemes[data.name] = data
-		ThemeManager:ApplyTheme(data.name, "local")
-	end
+	task.spawn(function()
+		local url = CommunityRepo .. "themes/" .. tostring(name) .. ".txt"
+		local ok, source = pcall(game.HttpGet, game, url)
+		if not ok or not source or source == "" then
+			warn("community.loadTheme: failed to download '" .. name .. "'")
+			return
+		end
+		local path = ThemeFolder .. "/" .. tostring(name):gsub("[^%w%s_%-]", "_") .. ".txt"
+		local writeOk = pcall(writefile, path, source)
+		if not writeOk then
+			warn("community.loadTheme: failed to save file")
+			return
+		end
+		local HttpService = game:GetService("HttpService")
+		local data = HttpService:JSONDecode(source)
+		if type(data) == "table" then
+			data.name = data.name or name
+			ThemeManager.CustomThemes[data.name] = data
+			ThemeManager:ApplyTheme(data.name, "local")
+		end
+	end)
 end
 
 return ThemeManager
