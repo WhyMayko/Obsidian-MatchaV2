@@ -55,6 +55,16 @@ local Tabs = {
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
 
+Library:SetWatermark("Galax Hub | Obsidian Matcha V2")
+Library:SetWatermarkVisibility(true)
+
+Tabs.Main:UpdateWarningBox({
+    Title = "GalaxHub V2 System",
+    Text = "All features loaded. Support for WarningBox, Full-width sections, InfoCards and auto-cleanup active!",
+    Visible = true,
+    IsNormal = true,
+})
+
 local MainLeft = Tabs.Main:AddLeftGroupbox("Groupbox", "boxes")
 local MainRight = Tabs.Main:AddRightGroupbox("Dropdowns")
 
@@ -430,6 +440,31 @@ ScrollGroup:AddButton({
     end,
 })
 
+local FullGroup = Tabs.Main:AddFullGroupbox("Community & Server Information")
+FullGroup:AddInfoCard({
+    Title = "Hello, " .. tostring(game:GetService("Players").LocalPlayer.Name),
+    Badge = "Tester",
+    Subtitle = tostring(game:GetService("Players").LocalPlayer.Name) .. " - GalaxHub Script",
+    Avatar = game:GetService("Players").LocalPlayer.UserId,
+    ButtonText = "Discord",
+    ButtonSubtext = "Copy link",
+    ButtonIcon = "copy",
+    OnButtonClick = function()
+        pcall(function() setclipboard("https://discord.gg/galaxhub") end)
+        Library:Notify({
+            Title = "Discord Link",
+            Description = "Copied https://discord.gg/galaxhub to clipboard!",
+            Time = 3,
+        })
+    end,
+    Items = {
+        { Label = "Players", Value = function() local plrs = game:GetService("Players"); return tostring(plrs and #plrs:GetPlayers() or 1) .. " online" end },
+        { Label = "Region", Value = "Brazil" },
+        { Label = "FPS", Value = function() return tostring(math.floor(workspace:GetRealPhysicsFPS() or 60)) end },
+        { Label = "Ping", Value = function() local st = game:GetService("Stats"); local item = st and st.Network and st.Network.ServerStatsItem and st.Network.ServerStatsItem["Data Ping"]; return tostring(math.floor(item and item:GetValue() or 30)) .. " ms" end },
+    },
+})
+
 Tabs.Key:AddLabel({
     Text = "Key: Banana",
     DoesWrap = true,
@@ -466,12 +501,15 @@ local performanceConnection = game:GetService("RunService").RenderStepped:Connec
     local elapsed = now - lastPerformanceUpdate
     if elapsed >= 1 then
         local fps = math.floor(frameCount / elapsed + 0.5)
-        local ping = math.floor(GetPingValue() + 0.5)
+        local stats = game:GetService("Stats")
+        local pingItem = stats and stats.Network and stats.Network.ServerStatsItem and stats.Network.ServerStatsItem["Data Ping"]
+        local ping = math.floor(pingItem and pingItem:GetValue() or 30)
         performanceValue:SetText(tostring(fps) .. " fps | " .. tostring(ping) .. " ms")
         frameCount = 0
         lastPerformanceUpdate = now
     end
 end)
+Library:GiveSignal(performanceConnection)
 
 task.spawn(function()
     local steps = {
@@ -496,8 +534,7 @@ task.spawn(function()
 end)
 
 Library:OnUnload(function()
-    performanceConnection:Disconnect()
-    print("Unloaded")
+    print("Unloaded successfully!")
 end)
 
 EssentialsManager:SetLibrary(Library)

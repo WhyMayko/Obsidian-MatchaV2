@@ -1245,18 +1245,36 @@ local function makeHandle(widget)
     return handle
 end
 
+function GalaxObsidian:GiveSignal(signal)
+    self.Signals = self.Signals or {}
+    self.Signals[#self.Signals + 1] = signal
+    return signal
+end
 function GalaxObsidian:OnUnload(callback)
+    self.UnloadCallbacks = self.UnloadCallbacks or {}
     self.UnloadCallbacks[#self.UnloadCallbacks + 1] = callback
 end
 function GalaxObsidian:Unload()
     self.Unloaded = true
-    for _, cb in ipairs(self.UnloadCallbacks) do
-        local ok, err = pcall(cb)
-        if not ok then error("Unload callback: " .. tostring(err), 2) end
+    for _, cb in ipairs(self.UnloadCallbacks or {}) do
+        pcall(cb)
     end
+    for _, signal in ipairs(self.Signals or {}) do
+        if type(signal) == "table" and type(signal.Disconnect) == "function" then
+            pcall(function() signal:Disconnect() end)
+        elseif type(signal) == "function" then
+            pcall(signal)
+        end
+    end
+    self.Signals = {}
+    self.UnloadCallbacks = {}
     if self.ActiveWindow then
         self.ActiveWindow:Destroy()
         self.ActiveWindow = nil
+    end
+    if _G.GalaxObsidianActiveWindow then
+        pcall(function() _G.GalaxObsidianActiveWindow:Destroy() end)
+        _G.GalaxObsidianActiveWindow = nil
     end
     for key, probe in pairs(measureProbes) do
         probe:Remove()
@@ -1275,6 +1293,45 @@ local function fitTextToWidth(text, maxWidth, size, font)
     return TextManager:Fit(text, maxWidth, size or GalaxObsidian.FontSize or 14, font or Theme.Font, scale)
 end
 
+function GalaxObsidian:SetWatermark(text)
+    self.WatermarkText = tostring(text or "")
+    if self.ActiveWindow and self.ActiveWindow.SetWatermark then
+        self.ActiveWindow:SetWatermark(text)
+    end
+end
+function GalaxObsidian:SetWatermarkVisibility(visible)
+    self.WatermarkVisible = visible == true
+    if self.ActiveWindow and self.ActiveWindow.SetWatermarkVisibility then
+        self.ActiveWindow:SetWatermarkVisibility(visible)
+    end
+end
+function GalaxObsidian:SetKeybindMenuVisible(state)
+    if self.ActiveWindow then
+        self.ActiveWindow.ShowKeybindMenu = state == true
+    end
+end
+function GalaxObsidian:SetFont(font)
+    self.Font = font
+    Theme.Font = font
+end
+function GalaxObsidian:GetTextBounds(text, font, size)
+    local width = TextManager:Measure(text, size or self.FontSize or 14, font or Theme.Font)
+    return Vector2.new(width, size or self.FontSize or 14)
+end
+function GalaxObsidian:GetBetterColor(color, add)
+    add = tonumber(add) or 0
+    return Color3.fromRGB(
+        clamp(math.floor(color.R * 255 + add + 0.5), 0, 255),
+        clamp(math.floor(color.G * 255 + add + 0.5), 0, 255),
+        clamp(math.floor(color.B * 255 + add + 0.5), 0, 255)
+    )
+end
+function GalaxObsidian:GetLighterColor(color)
+    return self:GetBetterColor(color, 20)
+end
+function GalaxObsidian:GetDarkerColor(color)
+    return self:GetBetterColor(color, -20)
+end
 function GalaxObsidian:SetNotifySide(side)
     self.NotifySide = tostring(side) == "Left" and "Left" or "Right"
     if self.ActiveWindow then
@@ -1664,6 +1721,9 @@ local function resolveKeybindPopupConfig(popupConfig)
 end
 
 function GalaxObsidian:CreateWindow(options)
+    if self.ActiveWindow or _G.GalaxObsidianActiveWindow then
+        self:Unload()
+    end
     options = options or {}
     local mouse = getMouse()
     if not mouse then
@@ -1722,6 +1782,15 @@ function GalaxObsidian:CreateWindow(options)
         SearchFocused = false,
         ShowSearch = options.ShowSearch ~= false,
         ShowKeybindMenu = options.ShowKeybindMenu == true,
+        Watermark = {
+            text = GalaxObsidian.WatermarkText or "",
+            visible = GalaxObsidian.WatermarkVisible == true,
+            px = 20,
+            py = 20,
+            dragging = false,
+            doffX = 0,
+            doffY = 0,
+        },
         BlockRobloxInput = options.BlockRobloxInput ~= false,
         KeybindMenuX = options.KeybindMenuX or keybindMenuOptions.X,
         KeybindMenuY = options.KeybindMenuY or keybindMenuOptions.Y,
@@ -3160,6 +3229,8 @@ function GalaxObsidian:CreateWindow(options)
             base = 24
         elseif widget.type == "button" then
             base = 21
+        elseif widget.type == "infocard" then
+            base = widget.height or 136
         end
         return math.floor(base * scale + 0.5)
     end
@@ -3955,6 +4026,104 @@ function GalaxObsidian:CreateWindow(options)
         end
     end
 
+    function Window:_renderInfoCard(widget, x, y, w, z)
+        local scale = self:GetScale()
+        local h = math.floor((widget.height or 136) * scale)
+        local pad = math.floor(10 * scale)
+
+        self:_square(x, y, w, h, Theme.Surface, true, 1, 6, z + 1)
+        self:_square(x, y, w, h, Theme.SoftOutline, false, 1, 6, z + 2)
+
+        local halfW = math.floor((w - pad * 3) / 2)
+        local leftX = x + pad
+        local dividerX = leftX + halfW + math.floor(pad / 2)
+        local rightX = dividerX + math.floor(pad / 2)
+
+        self:_line(dividerX, y + pad, dividerX, y + h - pad, Theme.Outline, 1, z + 2)
+
+        local avatarSize = math.floor(46 * scale)
+        local avatarY = y + pad
+        if widget.avatarData then
+            self:_image(widget.avatarData, leftX, avatarY, avatarSize, avatarSize, 6, z + 3)
+        elseif widget.avatarUrl then
+            if not widget._avatarRequested then
+                widget._avatarRequested = true
+                self:_requestImage(widget.avatarUrl, function(data)
+                    widget.avatarData = data
+                end)
+            end
+            self:_square(leftX, avatarY, avatarSize, avatarSize, Theme.Main, true, 1, 6, z + 3)
+            self:_drawIcon("user", leftX + math.floor(avatarSize / 2), avatarY + math.floor(avatarSize / 2), math.floor(22 * scale), true, z + 4)
+        else
+            self:_square(leftX, avatarY, avatarSize, avatarSize, Theme.Main, true, 1, 6, z + 3)
+            self:_drawIcon("user", leftX + math.floor(avatarSize / 2), avatarY + math.floor(avatarSize / 2), math.floor(22 * scale), true, z + 4)
+        end
+        self:_square(leftX, avatarY, avatarSize, avatarSize, Theme.Outline, false, 1, 6, z + 4)
+
+        local textStartX = leftX + avatarSize + math.floor(8 * scale)
+        local textMaxW = halfW - avatarSize - math.floor(8 * scale)
+        local titleText = tostring(widget.title or "User")
+        local badgeText = widget.badge and (" (" .. tostring(widget.badge) .. ")") or ""
+
+        local titleW = estimateTextWidth(titleText, 14, Theme.Font)
+        self:_text(fitTextToWidth(titleText, textMaxW, 14, Theme.Font), textStartX, avatarY + math.floor(4 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+        if badgeText ~= "" then
+            local badgeW = estimateTextWidth(badgeText, 13, Theme.Font)
+            if titleW + badgeW <= textMaxW then
+                self:_text(badgeText, textStartX + titleW, avatarY + math.floor(4 * scale) - _yOfs(scale), Theme.Accent, 13, Drawing.Fonts.Monospace, false, true, z + 4)
+            end
+        end
+        local subtitle = tostring(widget.subtitle or "")
+        if subtitle ~= "" then
+            self:_text(fitTextToWidth(subtitle, textMaxW, 12, Theme.Font), textStartX, avatarY + math.floor(22 * scale) - _yOfs(scale), Theme.Muted, 12, Drawing.Fonts.Monospace, false, true, z + 4)
+        end
+
+        local btnH = math.floor(34 * scale)
+        local btnY = y + h - pad - btnH
+        local btnW = halfW
+        local overBtn = self:_hover(leftX, btnY, btnW, btnH, widget)
+        local btnBg = self:_anim(widget, "infocard.btn.bg", overBtn and Theme.Accent or Color3.fromRGB(75, 95, 230), 16)
+        self:_square(leftX, btnY, btnW, btnH, btnBg, true, 1, 5, z + 3)
+        self:_square(leftX, btnY, btnW, btnH, Theme.Outline2, false, 1, 5, z + 4)
+
+        local btnIcon = widget.buttonIcon or "copy"
+        local btnTitle = tostring(widget.buttonText or "Discord")
+        local btnSub = tostring(widget.buttonSubtext or "Copy")
+
+        self:_text(btnTitle, leftX + math.floor(10 * scale), btnY + math.floor(4 * scale) - _yOfs(scale), Theme.Text, 13, Drawing.Fonts.Monospace, false, true, z + 5)
+        self:_text(btnSub, leftX + math.floor(10 * scale), btnY + math.floor(18 * scale) - _yOfs(scale), Color3.fromRGB(210, 210, 255), 11, Drawing.Fonts.Monospace, false, true, z + 5)
+        self:_drawIcon(btnIcon, leftX + btnW - math.floor(16 * scale), btnY + math.floor(btnH / 2), math.floor(14 * scale), true, z + 5)
+
+        if self:_click(leftX, btnY, btnW, btnH, widget) then
+            if type(widget.onButtonClick) == "function" then
+                pcall(widget.onButtonClick)
+            end
+            self.Mouse1Clicked = false
+        end
+
+        local rightHeader = tostring(widget.serverInfoTitle or "Server information")
+        self:_text(rightHeader, rightX, y + pad + math.floor(2 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, z + 3)
+
+        local defaultItems = {
+            { Label = "Players", Value = function() local plrs = game:GetService("Players"); return tostring(plrs and #plrs:GetPlayers() or 1) .. " online" end },
+            { Label = "Region", Value = "Brazil" },
+            { Label = "FPS", Value = function() return tostring(math.floor(workspace:GetRealPhysicsFPS() or 60)) end },
+            { Label = "Ping", Value = function() local st = game:GetService("Stats"); local item = st and st.Network and st.Network.ServerStatsItem and st.Network.ServerStatsItem["Data Ping"]; return tostring(math.floor(item and item:GetValue() or 30)) .. " ms" end },
+        }
+        local items = widget.items or defaultItems
+        local itemStartY = y + pad + math.floor(24 * scale)
+        local rowH = math.floor(18 * scale)
+        local rightHalfW = w - (rightX - x) - pad
+        for idx, item in ipairs(items) do
+            local rowY = itemStartY + (idx - 1) * rowH
+            local label = tostring(item.Label or "")
+            local val = type(item.Value) == "function" and tostring(item.Value()) or tostring(item.Value or "")
+            self:_text(label, rightX, rowY - _yOfs(scale), Theme.Muted, 13, Drawing.Fonts.Monospace, false, true, z + 3)
+            local valW = estimateTextWidth(val, 13, Drawing.Fonts.Monospace)
+            self:_text(val, rightX + rightHalfW - valW, rowY - _yOfs(scale), Theme.Text, 13, Drawing.Fonts.Monospace, false, true, z + 3)
+        end
+    end
+
     function Window:_renderWidget(widget, x, y, w, z, clipTop, clipBottom)
         local previousClipTop, previousClipBottom = self._clipTop, self._clipBottom
         if clipTop ~= nil or clipBottom ~= nil then
@@ -4091,6 +4260,8 @@ function GalaxObsidian:CreateWindow(options)
             self:_renderTextbox(widget, x, y, w, z)
         elseif widget.type == "keybox" then
             self:_renderKeyBox(widget, x, y, w, z)
+        elseif widget.type == "infocard" then
+            self:_renderInfoCard(widget, x, y, w, z)
         end
         self._clipTop, self._clipBottom = previousClipTop, previousClipBottom
     end
@@ -4209,6 +4380,7 @@ function GalaxObsidian:CreateWindow(options)
         local scrollGap = math.floor(6 * scale)
         local scrollSlot = scrollTrackW + scrollGap
         local columnW = math.floor((w - pad * 2 - columnGap) / 2)
+        local fullW = w - pad * 2
         local leftY = y + pad
         local rightY = y + pad
         local layouts = {}
@@ -4218,28 +4390,65 @@ function GalaxObsidian:CreateWindow(options)
         end
         local scrollState = self.TabScroll[tab]
 
+        if tab.WarningBox and tab.WarningBox.visible then
+            local wb = tab.WarningBox
+            local wbW = fullW
+            local textSize = 13
+            local titleSize = 14
+            local lines = wrapTextLines(wb.text, wbW - math.floor(40 * scale), textSize, 6, Theme.Font)
+            local wbH = math.floor(26 * scale) + #lines * math.floor(16 * scale)
+            local wbX = x + pad
+            local wbY = leftY
+            local wbClipTop = clipTopOverride or y
+            local wbClipBottom = clipBottomOverride or (y + h)
+            if wbY < wbClipBottom and wbY + wbH > wbClipTop then
+                local bannerBg = wb.isNormal and Theme.Surface or Color3.fromRGB(35, 20, 20)
+                local bannerOutline = wb.isNormal and Theme.Outline or Color3.fromRGB(90, 30, 30)
+                local accentColor = wb.isNormal and Theme.Accent or Theme.Red
+                self:_square(wbX, wbY, wbW, wbH, bannerBg, true, 1, 4, z + 1)
+                self:_square(wbX, wbY, wbW, wbH, bannerOutline, false, 1, 4, z + 2)
+                self:_square(wbX, wbY, math.floor(4 * scale), wbH, accentColor, true, 1, 2, z + 3)
+                self:_drawIcon(wb.isNormal and "info" or "alert-triangle", wbX + math.floor(16 * scale), wbY + math.floor(14 * scale), math.floor(14 * scale), true, z + 4)
+                self:_text(wb.title, wbX + math.floor(28 * scale), wbY + math.floor(7 * scale) - _yOfs(scale), accentColor, titleSize, Drawing.Fonts.Monospace, false, true, z + 4)
+                for lineIdx, line in ipairs(lines) do
+                    self:_text(line, wbX + math.floor(28 * scale), wbY + math.floor(24 * scale) + (lineIdx - 1) * math.floor(16 * scale) - _yOfs(scale), Theme.Muted, textSize, Drawing.Fonts.Monospace, false, true, z + 4)
+                end
+            end
+            leftY = leftY + wbH + math.floor(8 * scale)
+            rightY = rightY + wbH + math.floor(8 * scale)
+        end
+
         for index, section in ipairs(tab.Sections) do
             if self:_sectionVisible(section) then
                 local side = section.side
                 if not side then
                     side = (index % 2 == 0) and "Right" or "Left"
                 end
-                local sideName = side == "Right" and "Right" or "Left"
-                local useRight = sideName == "Right"
+                local isFull = side == "Full" or side == "Middle"
+                local sideName = isFull and "Left" or (side == "Right" and "Right" or "Left")
+                local useRight = (not isFull) and (sideName == "Right")
                 local sx = x + pad
                 local sy = leftY
-                if useRight then
+                local sw = columnW
+                if isFull then
+                    local startY = math.max(leftY, rightY)
+                    sy = startY
+                    sw = fullW
+                elseif useRight then
                     sx = x + pad + columnW + columnGap
                     sy = rightY
                 end
-                local widgetW = columnW - math.floor(14 * scale)
+                local widgetW = sw - math.floor(14 * scale)
                 for _, widget in ipairs(section.widgets) do
                     widget._calcWidth = widgetW
                 end
                 local sh = self:_sectionHeight(section)
-                layouts[#layouts + 1] = { section = section, side = sideName, x = sx, y = sy, w = columnW, h = sh }
+                layouts[#layouts + 1] = { section = section, side = sideName, isFull = isFull, x = sx, y = sy, w = sw, h = sh }
 
-                if useRight then
+                if isFull then
+                    leftY = sy + sh + math.floor(6 * scale)
+                    rightY = leftY
+                elseif useRight then
                     rightY = rightY + sh + math.floor(6 * scale)
                 else
                     leftY = leftY + sh + math.floor(6 * scale)
@@ -4251,7 +4460,14 @@ function GalaxObsidian:CreateWindow(options)
         scrollState.Left = clamp(scrollState.Left or 0, 0, scrollMax.Left)
         scrollState.Right = clamp(scrollState.Right or 0, 0, scrollMax.Right)
         for _, layout in ipairs(layouts) do
-            if (scrollMax[layout.side] or 0) > 0 then
+            if layout.isFull then
+                local maxScroll = math.max(scrollMax.Left or 0, scrollMax.Right or 0)
+                if maxScroll > 0 then
+                    layout.w = math.max(80, fullW - scrollSlot)
+                else
+                    layout.w = fullW
+                end
+            elseif (scrollMax[layout.side] or 0) > 0 then
                 layout.w = math.max(40, columnW - scrollSlot)
             else
                 layout.w = columnW
@@ -5135,6 +5351,57 @@ function GalaxObsidian:CreateWindow(options)
         end
     end
 
+    function Window:_renderWatermark()
+        local wm = self.Watermark
+        if not wm or wm.visible ~= true or not wm.text or wm.text == "" then
+            return nil
+        end
+        local scale = self:GetScale()
+        local text = tostring(wm.text)
+        local textSize = 13
+        local tw = estimateTextWidth(text, textSize, Drawing.Fonts.Monospace) + math.floor(20 * scale)
+        local th = math.floor(24 * scale)
+        local px = wm.px or 20
+        local py = wm.py or 20
+        px, py = self:_clampToViewport(px, py, tw, th, 4, true)
+        wm.px, wm.py = px, py
+
+        if wm.dragging then
+            if self.Mouse1Held then
+                wm.px = mouse.X - wm.doffX
+                wm.py = mouse.Y - wm.doffY
+                px, py = self:_clampToViewport(wm.px, wm.py, tw, th, 4, true)
+                wm.px, wm.py = px, py
+            else
+                wm.dragging = false
+                self:_releaseInteraction("Watermark")
+            end
+        elseif self:_click(px, py, tw, th, "Watermark") then
+            wm.dragging = true
+            wm.doffX = mouse.X - px
+            wm.doffY = mouse.Y - py
+            self:_claimInteraction("Watermark")
+        end
+
+        local z = 500
+        self:_square(px, py, tw, th, Theme.Topbar, true, 0.95, 3, z)
+        self:_square(px, py, tw, th, Theme.SoftOutline, false, 1, 3, z + 1)
+        self:_line(px, py, px + tw, py, Theme.Accent, 2, z + 2)
+        local scaledTextSize = math.floor(textSize * scale + 0.5)
+        local yOfs = _yOfs(scale)
+        self:_text(
+            text,
+            px + math.floor(10 * scale),
+            py + math.floor(th / 2) - math.floor(scaledTextSize / 2) - yOfs,
+            Theme.Text,
+            textSize,
+            Drawing.Fonts.Monospace,
+            false,
+            true,
+            z + 3
+        )
+    end
+
     function Window:_renderLoading()
         local loading = self.LoadingOverlay
         if not loading or loading.closed then return nil end
@@ -5347,6 +5614,7 @@ function GalaxObsidian:CreateWindow(options)
             self:_renderDraggableLabels()
             self:_renderDraggableButtons()
             self:_renderDraggableMenus()
+            self:_renderWatermark()
             NotificationManager:RenderNotifications(self)
             self:_renderLoading()
             self:_renderTooltip()
@@ -5647,11 +5915,19 @@ function GalaxObsidian:CreateWindow(options)
         self:_renderDraggableLabels()
         self:_renderDraggableButtons()
         self:_renderDraggableMenus()
+        self:_renderWatermark()
         NotificationManager:RenderNotifications(self)
         self:_renderLoading()
         self:_renderTooltip()
         GalaxObsidian.DialogManager:RenderDialogs(self)
         self:_hideUnused()
+    end
+
+    function Window:SetWatermark(text)
+        self.Watermark.text = tostring(text or "")
+    end
+    function Window:SetWatermarkVisibility(visible)
+        self.Watermark.visible = visible == true
     end
 
     function Window:Notify(message, title, duration)
@@ -5953,14 +6229,21 @@ function GalaxObsidian:CreateWindow(options)
     function Window:Destroy()
         self.Running = false
         self:_setOpen(false)
+        self:_clearInteraction()
         for _, list in pairs(self.Pool) do
             for _, object in ipairs(list) do
-                local ok, err = pcall(function()
+                pcall(function()
                     object:Remove()
                 end)
-                if not ok then error("Destroy pool cleanup: " .. tostring(err), 2) end
                 drawingMeta[object] = nil
             end
+        end
+        self.Pool = { Square = {}, Text = {}, Line = {}, Circle = {}, Image = {} }
+        if GalaxObsidian.ActiveWindow == self then
+            GalaxObsidian.ActiveWindow = nil
+        end
+        if _G.GalaxObsidianActiveWindow == self then
+            _G.GalaxObsidianActiveWindow = nil
         end
     end
 
@@ -5980,6 +6263,15 @@ function GalaxObsidian:CreateWindow(options)
         function Tab:Select()
             self._Window.ActiveTab = self
             self._Window:_closeFloating()
+        end
+        function Tab:UpdateWarningBox(info)
+            info = info or {}
+            self.WarningBox = {
+                visible = info.Visible ~= false and (info.Title ~= nil or info.Text ~= nil),
+                title = tostring(info.Title or "Warning"),
+                text = tostring(info.Text or ""),
+                isNormal = info.IsNormal == true,
+            }
         end
 
         function Tab:AddSection(sectionName, side)
@@ -6795,6 +7087,34 @@ function GalaxObsidian:CreateWindow(options)
             function Section:AddDependencyGroupbox()
                 return dependencyBox()
             end
+            function Section:AddInfoCard(config)
+                config = config or {}
+                local avatar = config.Avatar or config.Image or config.AvatarUrl or config.AvatarData
+                local widget = register({
+                    type = "infocard",
+                    id = config.Index or config.Idx,
+                    title = config.Title or "User",
+                    badge = config.Badge,
+                    subtitle = config.Subtitle or "",
+                    avatarUrl = (type(avatar) == "string" and not isImageData(avatar)) and imageUrl(avatar) or nil,
+                    avatarData = isImageData(avatar) and avatar or nil,
+                    buttonText = config.ButtonText or "Discord",
+                    buttonSubtext = config.ButtonSubtext or "Copy",
+                    buttonIcon = config.ButtonIcon or "copy",
+                    onButtonClick = config.OnButtonClick or config.Callback,
+                    serverInfoTitle = config.ServerInfoTitle or "Server information",
+                    items = config.Items or config.ServerItems,
+                    height = tonumber(config.Height) or 136,
+                    visible = config.Visible ~= false,
+                })
+                return Window:_widgetHandle(widget, {
+                    SetTitle = function(_, text) widget.title = tostring(text or "") end,
+                    SetBadge = function(_, text) widget.badge = text and tostring(text) or nil end,
+                    SetSubtitle = function(_, text) widget.subtitle = tostring(text or "") end,
+                    SetItems = function(_, items) widget.items = items or {} end,
+                })
+            end
+            Section.AddBanner = Section.AddInfoCard
             return Section
         end
 
@@ -6805,6 +7125,10 @@ function GalaxObsidian:CreateWindow(options)
         function Tab:AddRightGroupbox(name)
             return Tab:AddSection(name, "Right")
         end
+        function Tab:AddFullGroupbox(name)
+            return Tab:AddSection(name, "Full")
+        end
+        Tab.AddMiddleGroupbox = Tab.AddFullGroupbox
         function Tab:AddLeftTabbox()
             local section = Tab:AddSection("__tabbox", "Left")
             return section:AddTabbox()
@@ -6897,6 +7221,8 @@ function GalaxObsidian:CreateWindow(options)
     end)
     DialogManager:SetLibrary(GalaxObsidian)
     NotificationManager:SetLibrary(GalaxObsidian)
+    GalaxObsidian.ActiveWindow = Window
+    _G.GalaxObsidianActiveWindow = Window
     return Window
 end
 
