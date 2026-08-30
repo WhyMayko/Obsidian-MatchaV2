@@ -493,7 +493,7 @@ end
 function WebhookManager:BuildTab(window, name, icon)
 	assert(window, "WebhookManager:BuildTab requires a Window!")
 	local tab = window:AddTab(name or "Webhook", icon or "send")
-	self:SetLibrary(window.Library or (_G.Galax and _G.Galax.Library) or self.Library)
+	self:SetLibrary(_G.Galax.Library)
 	self:BuildSection(tab)
 	return tab
 end

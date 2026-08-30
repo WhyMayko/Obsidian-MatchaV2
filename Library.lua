@@ -7211,25 +7211,21 @@ function GalaxObsidian:CreateWindow(options)
     function Window:AddWebhookTab(name, icon)
         local tab = self:AddTab(name or "Webhook", icon or "send")
         tab.IsWebhookTab = true
-        local manager = GalaxObsidian.WebhookManager or (_G.Galax and _G.Galax.WebhookManager)
-        if manager then
-            manager:SetLibrary(GalaxObsidian)
-            manager:BuildSection(tab)
-        end
+        local manager = _G.Galax.WebhookManager
+        manager:SetLibrary(GalaxObsidian)
+        manager:BuildSection(tab)
         return tab
     end
 
     function Window:AddGroupGuardTab(name, icon, groupId)
         local tab = self:AddTab(name or "Group Guard", icon or "shield")
         tab.IsGroupGuardTab = true
-        local manager = GalaxObsidian.GroupGuard or (_G.Galax and _G.Galax.GroupGuard)
-        if manager then
-            manager:SetLibrary(GalaxObsidian)
-            if groupId then
-                manager:SetGroup(groupId)
-            end
-            manager:BuildSection(tab)
+        local manager = _G.Galax.GroupGuard
+        manager:SetLibrary(GalaxObsidian)
+        if groupId then
+            manager:SetGroup(groupId)
         end
+        manager:BuildSection(tab)
         return tab
     end
 

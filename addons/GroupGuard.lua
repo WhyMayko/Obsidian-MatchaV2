@@ -220,7 +220,7 @@ end
 function GroupGuard:BuildTab(window, name, icon, groupId)
 	assert(window, "GroupGuard:BuildTab requires a Window!")
 	local tab = window:AddTab(name or "Group Guard", icon or "shield")
-	self:SetLibrary(window.Library or (_G.Galax and _G.Galax.Library) or self.Library)
+	self:SetLibrary(_G.Galax.Library)
 	if groupId then
 		self:SetGroup(groupId)
 	end
