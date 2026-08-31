@@ -234,12 +234,32 @@ function AnimationManager:Approach(owner, key, target, speed)
 		return target
 	end
 
+	if state.value == target then
+		state.time = timeNow
+		return target
+	end
+
 	local dt = clamp(timeNow - (state.time or timeNow), 0, 0.1)
 	state.time = timeNow
 	state.target = target
 
 	local alpha = 1 - math.exp(-(speed or self.DefaultSpeed) * dt)
-	state.value = self:Lerp(state.value, target, alpha)
+	local nextVal = self:Lerp(state.value, target, alpha)
+
+	if kind == "number" then
+		if math.abs(nextVal - target) < 0.001 then
+			nextVal = target
+		end
+	elseif kind == "color" then
+		if math.abs(nextVal.R - target.R) < 0.003 and math.abs(nextVal.G - target.G) < 0.003 and math.abs(nextVal.B - target.B) < 0.003 then
+			nextVal = target
+		end
+	end
+
+	state.value = nextVal
+	if nextVal ~= target and GalaxObsidian.ActiveWindow then
+		GalaxObsidian.ActiveWindow._lastActivity = timeNow
+	end
 	return state.value
 end
 
@@ -961,6 +981,40 @@ local function makeHandle(widget)
             _fire(widget, widget.value, widget.transparency)
         end
     end
+    function handle:SetHSVFromRGB(color)
+        if widget.type == "colorpicker" and color then
+            handle:SetValueRGB(color, widget.transparency)
+        end
+    end
+    function handle:RunChanged(...)
+        if _isToggle(widget) then
+            _fire(widget, widget.value)
+        elseif widget.type == "slider" then
+            _fire(widget, widget.value)
+        elseif widget.type == "dropdown" then
+            _fire(widget, widget.value)
+        elseif widget.type == "multidropdown" then
+            _fire(widget, widget.selected)
+        elseif widget.type == "colorpicker" then
+            _fire(widget, widget.value, widget.transparency)
+        elseif widget.type == "keybind" then
+            _fire(widget, widget.value, widget.mode)
+        elseif widget.type == "textbox" or widget.type == "keybox" then
+            _fire(widget, widget.value)
+        end
+    end
+    function handle:DoClick(...)
+        if widget.type == "keybind" then
+            if widget.mode == "Toggle" then
+                widget._state = not widget._state
+                _fire(widget, widget._state)
+            else
+                _fire(widget, true)
+            end
+        elseif widget.callback then
+            safeCall(widget.callback, ...)
+        end
+    end
 
     function handle:OnChanged(cb)
         widget.changed = cb
@@ -1286,6 +1340,38 @@ function GalaxObsidian:SetDPIScale(percent)
     self.DPIScale = percent
     if self.ActiveWindow and self.ActiveWindow.SetDPIScale then
         self.ActiveWindow:SetDPIScale(percent)
+    end
+end
+function GalaxObsidian:SafeCallback(func, ...)
+    if type(func) ~= "function" then return end
+    local results = table.pack(pcall(func, ...))
+    if not results[1] then
+        if self.NotifyOnError and self.Notify then
+            self:Notify(tostring(results[2]), 4)
+        end
+        return nil
+    end
+    return table.unpack(results, 2, results.n)
+end
+function GalaxObsidian:Validate(tbl, template)
+    if type(tbl) ~= "table" then return template end
+    for k, v in pairs(template) do
+        if type(k) ~= "number" then
+            if type(v) == "table" then
+                tbl[k] = self:Validate(tbl[k], v)
+            elseif tbl[k] == nil then
+                tbl[k] = v
+            end
+        end
+    end
+    return tbl
+end
+function GalaxObsidian:GetKeyString(keyCode)
+    return TextManager and TextManager:KeyName(keyCode) or tostring(keyCode or "None")
+end
+function GalaxObsidian:SetBackgroundImage(image)
+    if self.ActiveWindow and self.ActiveWindow.SetBackgroundImage then
+        self.ActiveWindow:SetBackgroundImage(image)
     end
 end
 
@@ -5927,6 +6013,23 @@ function GalaxObsidian:CreateWindow(options)
         self._cornerRadius = value
         GalaxObsidian.CornerRadius = value
     end
+    function Window:SetBackgroundImage(image)
+        if isImageData(image) then
+            self.BackgroundImageData = image
+        elseif type(image) == "string" and image ~= "" then
+            RequestImage(imageUrl(image), function(data)
+                self.BackgroundImageData = data
+            end)
+        else
+            self.BackgroundImageData = nil
+        end
+    end
+    function Window:ShowTabInfo(name, description)
+        self.TabInfo = { Name = tostring(name or ""), Description = tostring(description or "") }
+    end
+    function Window:HideTabInfo()
+        self.TabInfo = nil
+    end
     function Window:GetTheme()
         local copy = {}
 
@@ -6912,6 +7015,27 @@ function GalaxObsidian:CreateWindow(options)
             function Section:AddDependencyGroupbox()
                 return dependencyBox()
             end
+            function Section:SetCollapsed(collapsed)
+                Section.collapsed = collapsed == true
+                if Section.disableCollapsing then Section.collapsed = false end
+            end
+            function Section:ToggleCollapsed()
+                if not Section.disableCollapsing then
+                    Section.collapsed = not Section.collapsed
+                end
+            end
+            function Section:SetVisible(visible)
+                Section.visible = visible == true
+            end
+            function Section:SetDescription(desc)
+                Section.description = desc and tostring(desc) or nil
+            end
+            function Section:Resize()
+            end
+            function Section:Destroy()
+                Section.destroyed = true
+                Section.visible = false
+            end
             return Section
         end
 
@@ -7011,7 +7135,8 @@ function GalaxObsidian:CreateWindow(options)
     task.spawn(function()
         while Window.Running and not Window.Destroyed do
             local idleTime = tick() - Window._lastActivity
-            task.wait(idleTime > 0.5 and 0.033 or 0.016)
+            local sleepTime = idleTime > 1.0 and 0.05 or (idleTime > 0.3 and 0.033 or 0.016)
+            task.wait(sleepTime)
             if not Window.Running or Window.Destroyed then break end
             if isrbxactive() then
                 Window:_updateInput()
