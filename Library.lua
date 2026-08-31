@@ -5936,6 +5936,7 @@ function GalaxObsidian:CreateWindow(options)
     function Window:ChangeTitle(title)
         self.Title = tostring(title or "")
     end
+    Window.SetTitle = Window.ChangeTitle
     function Window:SetFooter(footer)
         self.Footer = tostring(footer or "")
     end
@@ -7304,26 +7305,6 @@ function GalaxObsidian:OnUnload(callback)
     if type(callback) == "function" then
         self.UnloadCallbacks = self.UnloadCallbacks or {}
         self.UnloadCallbacks[#self.UnloadCallbacks + 1] = callback
-    end
-end
-
-function GalaxObsidian:SetWatermark(text)
-    self.WatermarkText = tostring(text or "")
-    if self.ActiveWindow then
-        self.ActiveWindow:SetWatermark(text)
-    end
-end
-
-function GalaxObsidian:SetWatermarkVisibility(visible)
-    self.WatermarkVisible = visible == true
-    if self.ActiveWindow then
-        self.ActiveWindow:SetWatermarkVisibility(visible)
-    end
-end
-
-function GalaxObsidian:SetNotifySide(side)
-    if self.ActiveWindow then
-        self.ActiveWindow:SetNotifySide(side)
     end
 end
 
