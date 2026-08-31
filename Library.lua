@@ -6179,8 +6179,6 @@ function GalaxObsidian:CreateWindow(options)
             self._Window.ActiveTab = self
             self._Window:_closeFloating()
         end
-        function Tab:UpdateWarningBox(info)
-        end
 
         function Tab:AddSection(sectionName, side)
             if type(sectionName) == "table" then
