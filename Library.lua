@@ -5487,7 +5487,7 @@ function GalaxObsidian:CreateWindow(options)
         local barY = y + height - math.floor(48 * scale)
         local barH = math.floor(15 * scale)
         self:_square(barX, barY, barW, barH, Theme.Main, true, 1, 4, z + 3)
-        local progress = self:_anim(loading, "progress", current / total, 10)
+        local progress = self:_anim(loading, "progress", current / total, 24)
         self:_square(barX, barY, math.floor(barW * progress), barH, Theme.Accent, true, 1, 4, z + 4)
         self:_text(tostring(current) .. "/" .. tostring(total), centerX, barY + math.floor(1 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, true, true, z + 5)
     end
@@ -5753,29 +5753,22 @@ function GalaxObsidian:CreateWindow(options)
         end
         local totalW = iconW + gap + chromeTitleW
         local startX = x + math.floor((sidebarW - totalW) / 2)
+        if self._titleIconDrawing then
+            pcall(function() self._titleIconDrawing:Remove() end)
+            self._titleIconDrawing = nil
+        end
         if iconW > 0 and self.IconData and self.IconData ~= "" then
-            if not self._titleIconDrawing then
-                self._titleIconDrawing = Drawing.new("Image")
-            end
-            local iconObj = self._titleIconDrawing
-            if iconObj then
-                if self._titleIconLastData ~= self.IconData then
-                    local ok = pcall(function()
-                        iconObj.Data = self.IconData
-                    end)
-                    if ok then
-                        self._titleIconLastData = self.IconData
-                    end
-                end
-                iconObj.Position = Vector2.new(startX, y + math.floor((topH - iconH) / 2))
-                iconObj.Size = Vector2.new(iconW, iconH)
-                iconObj.ZIndex = self:_zIndex(chromeZ + 4)
-                iconObj.Transparency = self:_uiTransparency(1)
-                iconObj.Visible = true
-            end
+            self:_image(
+                self.IconData,
+                startX,
+                y + math.floor((topH - iconH) / 2),
+                iconW,
+                iconH,
+                0,
+                chromeZ + 4,
+                1
+            )
             startX = startX + iconW + gap
-        elseif self._titleIconDrawing then
-            self._titleIconDrawing.Visible = false
         end
         if chromeTitleW > 0 then
             self:_text(
@@ -7344,7 +7337,17 @@ function GalaxObsidian:CreateLoading(options)
     function sidebar:AddDivider() return addSidebarItem("divider", "") end
     function loading:SetMessage(value) self.message = tostring(value or "") end
     function loading:SetDescription(value) self.description = tostring(value or "") end
-    function loading:SetCurrentStep(value) self.currentStep = clamp(tonumber(value) or self.currentStep, 0, self.totalSteps) end
+    function loading:SetCurrentStep(value)
+        self.currentStep = clamp(tonumber(value) or self.currentStep, 0, self.totalSteps)
+        if options.AutoContinue ~= false and self.currentStep >= self.totalSteps then
+            task.spawn(function()
+                task.wait(0.25)
+                if not self.closed and self.currentStep >= self.totalSteps then
+                    self:Continue()
+                end
+            end)
+        end
+    end
     function loading:SetTotalSteps(value) self.totalSteps = math.max(1, tonumber(value) or self.totalSteps) end
     function loading:SetWindowWidth(value) self.width = math.max(280, tonumber(value) or self.width) end
     function loading:SetWindowHeight(value) self.height = math.max(140, tonumber(value) or self.height) end
