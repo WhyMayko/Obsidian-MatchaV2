@@ -482,35 +482,6 @@ function ThemeManager:CreateThemeManager(groupbox)
 	groupbox:AddLabel("Accent color"):AddColorPicker("AccentColor", { Default = Color3.fromRGB(125, 85, 255) })
 	groupbox:AddLabel("Outline color"):AddColorPicker("OutlineColor", { Default = Color3.fromRGB(40, 40, 40) })
 	groupbox:AddLabel("Font color"):AddColorPicker("FontColor", { Default = Color3.fromRGB(255, 255, 255) })
-	groupbox:AddSlider("ThemeManager_Transparency", {
-		Text = "UI transparency",
-		Min = 10,
-		Max = 100,
-		Default = Library.ActiveWindow and math.floor(Library.ActiveWindow:GetTransparency() * 100 + 0.5) or 100,
-		Suffix = "%",
-		Rounding = 0,
-		HideMax = true,
-		Callback = function(value)
-			if Library.ActiveWindow then
-				Library.ActiveWindow:SetTransparency(value / 100)
-			end
-		end,
-	})
-
-	groupbox:AddSlider("ThemeManager_CornerRadius", {
-		Text = "Corner radius",
-		Min = 0,
-		Max = 12,
-		Default = Library.ActiveWindow and Library.ActiveWindow:GetCornerRadius() or 4,
-		Rounding = 0,
-		HideMax = true,
-		Callback = function(value)
-			if Library.ActiveWindow then
-				Library.ActiveWindow:SetCornerRadius(value)
-			end
-			Library.CornerRadius = value
-		end,
-	})
 
 	local themeNames = {}
 	for name in pairs(self.BuiltInThemes) do

@@ -502,6 +502,7 @@ Library:OnUnload(function()
 end)
 
 EssentialsManager:SetLibrary(Library)
+EssentialsManager:SetFolder("Galax/Obsidian/Settings")
 EssentialsManager:BuildSection(Tabs["UI Settings"])
 
 SaveManager:SetLibrary(Library)

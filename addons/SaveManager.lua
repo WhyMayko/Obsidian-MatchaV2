@@ -144,6 +144,7 @@ function SaveManager:IgnoreThemeSettings()
 		"ThemeManager_CustomThemesList",
 		"ThemeManager_SaveCustomTheme",
 		"UICornerSlider",
+		"UITransparencySlider",
 		"CornerRadius",
 		"DPIDropdown",
 		"NotificationSide",
