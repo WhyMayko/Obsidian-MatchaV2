@@ -2450,10 +2450,41 @@ function GalaxObsidian:CreateWindow(options)
         self.LastRobloxInputBlocked = shouldBlock
     end
 
-    function Window:_drawIcon(name, x, y, size, active, z)
+    function Window:_drawIcon(name, x, y, size, activeOrColor, z, hoverRatio)
         name = tostring(name or ""):lower()
         size = size or 14
         name = IconAliases[name] or name
+
+        local IconEngine = GalaxObsidian.IconEngine or (_G.Galax and _G.Galax.IconEngine)
+        if IconEngine then
+            local targetColor = nil
+            if typeof(activeOrColor) == "Color3" then
+                targetColor = activeOrColor
+            elseif activeOrColor == true then
+                targetColor = Theme.Accent or Theme.Text
+            else
+                targetColor = Theme.Muted or Theme.Text
+            end
+
+            local ix = math.floor(x - size / 2)
+            local iy = math.floor(y - size / 2)
+
+            if hoverRatio and hoverRatio > 0 and hoverRatio < 1 then
+                local mutedPng = IconEngine:Get(name, Theme.Muted)
+                local accentPng = IconEngine:Get(name, Theme.Accent or Theme.Text)
+                if mutedPng and accentPng then
+                    self:_image(mutedPng, ix, iy, size, size, 0, z, (1 - hoverRatio) * 0.8)
+                    self:_image(accentPng, ix, iy, size, size, 0, z + 1, hoverRatio * 0.8)
+                    return true
+                end
+            end
+
+            local png = IconEngine:Get(name, targetColor)
+            if png then
+                return self:_image(png, ix, iy, size, size, 0, z, activeOrColor == true and 0.85 or 0.65) ~= nil
+            end
+        end
+
         local data = IconData[name]
         if not data and name:match("^[%w%-]+$") then
             local url = GalaxObsidian.LucideIconUrl .. name .. ".png"
@@ -2467,7 +2498,7 @@ function GalaxObsidian:CreateWindow(options)
             return false
         end
         if not data then return false end
-        return self:_image(data, math.floor(x - size / 2), math.floor(y - size / 2), size, size, 0, z, active == true and 0.8 or 0.6) ~= nil
+        return self:_image(data, math.floor(x - size / 2), math.floor(y - size / 2), size, size, 0, z, activeOrColor == true and 0.8 or 0.6) ~= nil
     end
     function Window:_anim(owner, key, target, speed)
         if self.AnimationsEnabled == false then
@@ -5844,7 +5875,8 @@ function GalaxObsidian:CreateWindow(options)
             local iconY = chromeTabY + math.floor(tabEntryH / 2)
             local tabIconSize = math.max(12, math.floor(16 * scale))
             local tabColor = self:_animOrSnap(tab, "sidebar.text", (active or over) and Theme.Text or Theme.Muted, 16)
-            self:_drawIcon(tab.Icon or tab.Name, iconX, iconY, tabIconSize, active or over, chromeZ + 4)
+            local hoverRatio = self:_anim(tab, "sidebar.hoverRatio", (active or over) and 1 or 0, 16)
+            self:_drawIcon(tab.Icon or tab.Name, iconX, iconY, tabIconSize, active and (Theme.Accent or Theme.Text) or tabColor, chromeZ + 4, hoverRatio)
             local tabNameMaxW = sidebarW - math.floor(48 * scale)
             if tab.Badge and tab.Badge ~= "" then
                 local bText = tostring(tab.Badge)
