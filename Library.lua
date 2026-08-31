@@ -5189,7 +5189,8 @@ function GalaxObsidian:CreateWindow(options)
                     self:_claimInteraction(label)
                 end
 
-                self:_square(bgX, bgY, tw, th, Theme.Topbar, true, 1, 4, -3)
+                self:_drawDropShadow(bgX, bgY, tw, th, 4, -5)
+                self:_square(bgX, bgY, tw, th, Theme.Topbar, true, 0.95, 4, -3)
                 self:_square(bgX, bgY, tw, th, Theme.SoftOutline, false, 1, 4, -2)
                 local textSize = 14
                 local scaledTextSize = math.floor(textSize * scale + 0.5)
@@ -5243,15 +5244,23 @@ function GalaxObsidian:CreateWindow(options)
                     self:_claimInteraction(button)
                 end
                 local active = button.pressed or self:_hover(x, y, width, height, button)
-                self:_square(x, y, width, height, active and Theme.Surface2 or Theme.Topbar, true, 1, 5, -3)
-                self:_square(x, y, width, height, Theme.SoftOutline, false, 1, 5, -2)
-                local textX = x + math.floor(12 * scale)
+                self:_drawDropShadow(x, y, width, height, 5, -5)
+                self:_square(x, y, width, height, active and Theme.Surface2 or Theme.Topbar, true, 0.95, 5, -3)
+                self:_square(x, y, width, height, active and (Theme.Accent or Theme.Text) or Theme.SoftOutline, false, 1, 5, -2)
+                local textSize = 14
+                local scaledTextSize = math.floor(textSize * scale + 0.5)
+                local textY = y + math.floor(height / 2) - math.floor(scaledTextSize / 2) - _yOfs(scale)
                 if button.icon then
-                    local iconX = button.iconPosition == "Right" and x + width - math.floor(14 * scale) or textX + math.floor(7 * scale)
-                    self:_drawIcon(button.icon, iconX, y + height / 2, math.floor(14 * scale), active, -1)
-                    if button.iconPosition ~= "Right" then textX = textX + iconSpace end
+                    local iconSize = math.floor(14 * scale)
+                    local iconX = button.iconPosition == "Right" and x + width - math.floor(16 * scale) or x + math.floor(14 * scale)
+                    self:_drawIcon(button.icon, iconX, y + height / 2, iconSize, active, -1)
+                    local textX = button.iconPosition == "Right" and x + math.floor(14 * scale) or x + math.floor(14 * scale) + iconSpace
+                    self:_text(text, textX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
+                else
+                    local textW = estimateTextWidth(text, textSize, Drawing.Fonts.Monospace)
+                    local textX = x + math.floor((width - textW) / 2)
+                    self:_text(text, textX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
                 end
-                self:_text(text, textX, y + math.floor(7 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, -1)
             end
         end
     end
@@ -5280,7 +5289,8 @@ function GalaxObsidian:CreateWindow(options)
                     menu.doffY = mouse.Y - y
                     self:_claimInteraction(menu)
                 end
-                self:_square(x, y, width, height, Theme.Background, true, 1, 6, -4)
+                self:_drawDropShadow(x, y, width, height, 6, -6)
+                self:_square(x, y, width, height, Theme.Background, true, 0.96, 6, -4)
                 self:_square(x, y, width, height, Theme.Outline, false, 1, 6, -3)
                 self:_square(x, y, width, headerHeight, Theme.Topbar, true, 1, 6, -2)
                 self:_text(tostring(menu.title or "Menu"), x + math.floor(10 * scale), y + math.floor(8 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, -1)
