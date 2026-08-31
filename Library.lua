@@ -5214,15 +5214,22 @@ function GalaxObsidian:CreateWindow(options)
         local scale = self:GetScale()
         for _, button in ipairs(self.DraggableButtons) do
             if button.visible ~= false and not button.destroyed then
+                local text = tostring(button.text or "")
+                local hasText = text ~= ""
                 local hasIcon = button.icon and button.icon ~= "" and button.icon ~= false
-                local iconSize = hasIcon and math.floor(14 * scale) or 0
-                local iconGap = hasIcon and math.floor(6 * scale) or 0
+                local iconSize = hasIcon and math.floor(16 * scale) or 0
+                local iconGap = (hasIcon and hasText) and math.floor(6 * scale) or 0
                 local textSize = 14
                 local scaledTextSize = math.floor(textSize * scale + 0.5)
-                local textW = estimateTextWidth(text, textSize, Drawing.Fonts.Monospace)
-                local contentW = textW + (hasIcon and (iconSize + iconGap) or 0)
-                local width = contentW + math.floor(24 * scale)
+                local textW = hasText and estimateTextWidth(text, textSize, Drawing.Fonts.Monospace) or 0
+                local contentW = (hasIcon and iconSize or 0) + iconGap + textW
+                local width
                 local height = math.floor(30 * scale)
+                if hasIcon and not hasText then
+                    width = math.floor(32 * scale)
+                else
+                    width = contentW + math.floor(20 * scale)
+                end
                 local x = math.floor((button.px or 100) - width / 2)
                 local y = math.floor((button.py or 140) - height / 2)
                 if button.pressed then
@@ -5253,8 +5260,11 @@ function GalaxObsidian:CreateWindow(options)
                 self:_square(x, y, width, height, active and Theme.Surface2 or Theme.Topbar, true, 0.95, 5, -3)
                 self:_square(x, y, width, height, active and (Theme.Accent or Theme.Text) or Theme.SoftOutline, false, 1, 5, -2)
                 local textY = y + math.floor(height / 2) - math.floor(scaledTextSize / 2) - _yOfs(scale)
-                local startContentX = x + math.floor((width - contentW) / 2)
-                if hasIcon then
+                if hasIcon and not hasText then
+                    local iconX = x + math.floor(width / 2)
+                    self:_drawIcon(button.icon, iconX, y + height / 2, iconSize, active, -1)
+                elseif hasIcon and hasText then
+                    local startContentX = x + math.floor((width - contentW) / 2)
                     if button.iconPosition == "Right" then
                         self:_text(text, startContentX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
                         local iconX = startContentX + textW + iconGap + math.floor(iconSize / 2)
@@ -5265,7 +5275,8 @@ function GalaxObsidian:CreateWindow(options)
                         local textX = startContentX + iconSize + iconGap
                         self:_text(text, textX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
                     end
-                else
+                elseif hasText then
+                    local startContentX = x + math.floor((width - contentW) / 2)
                     self:_text(text, startContentX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
                 end
             end
