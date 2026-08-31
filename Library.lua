@@ -747,6 +747,11 @@ local IconAliases = {
     box = "square",
     paintbrush = "palette",
     ["folder-cog"] = "folder",
+    ["panel-left"] = "layout-panel-left",
+    ["panel-right"] = "layout-panel-right",
+    ["panel-top"] = "layout-panel-top",
+    ["panel-bottom"] = "layout-panel-bottom",
+    sidebar = "layout-panel-left",
 }
 local IconData = {
     check = IconAssets["assets/icons/check.png"],
@@ -5205,9 +5210,14 @@ function GalaxObsidian:CreateWindow(options)
         local scale = self:GetScale()
         for _, button in ipairs(self.DraggableButtons) do
             if button.visible ~= false and not button.destroyed then
-                local text = tostring(button.text or "")
-                local iconSpace = button.icon and math.floor(22 * scale) or 0
-                local width = estimateTextWidth(text, 14, Drawing.Fonts.Monospace) + math.floor(24 * scale) + iconSpace
+                local hasIcon = button.icon and button.icon ~= "" and button.icon ~= false
+                local iconSize = hasIcon and math.floor(14 * scale) or 0
+                local iconGap = hasIcon and math.floor(6 * scale) or 0
+                local textSize = 14
+                local scaledTextSize = math.floor(textSize * scale + 0.5)
+                local textW = estimateTextWidth(text, textSize, Drawing.Fonts.Monospace)
+                local contentW = textW + (hasIcon and (iconSize + iconGap) or 0)
+                local width = contentW + math.floor(24 * scale)
                 local height = math.floor(30 * scale)
                 local x = math.floor((button.px or 100) - width / 2)
                 local y = math.floor((button.py or 140) - height / 2)
@@ -5238,19 +5248,21 @@ function GalaxObsidian:CreateWindow(options)
                 self:_drawDropShadow(x, y, width, height, 5, -5)
                 self:_square(x, y, width, height, active and Theme.Surface2 or Theme.Topbar, true, 0.95, 5, -3)
                 self:_square(x, y, width, height, active and (Theme.Accent or Theme.Text) or Theme.SoftOutline, false, 1, 5, -2)
-                local textSize = 14
-                local scaledTextSize = math.floor(textSize * scale + 0.5)
                 local textY = y + math.floor(height / 2) - math.floor(scaledTextSize / 2) - _yOfs(scale)
-                if button.icon then
-                    local iconSize = math.floor(14 * scale)
-                    local iconX = button.iconPosition == "Right" and x + width - math.floor(16 * scale) or x + math.floor(14 * scale)
-                    self:_drawIcon(button.icon, iconX, y + height / 2, iconSize, active, -1)
-                    local textX = button.iconPosition == "Right" and x + math.floor(14 * scale) or x + math.floor(14 * scale) + iconSpace
-                    self:_text(text, textX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
+                local startContentX = x + math.floor((width - contentW) / 2)
+                if hasIcon then
+                    if button.iconPosition == "Right" then
+                        self:_text(text, startContentX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
+                        local iconX = startContentX + textW + iconGap + math.floor(iconSize / 2)
+                        self:_drawIcon(button.icon, iconX, y + height / 2, iconSize, active, -1)
+                    else
+                        local iconX = startContentX + math.floor(iconSize / 2)
+                        self:_drawIcon(button.icon, iconX, y + height / 2, iconSize, active, -1)
+                        local textX = startContentX + iconSize + iconGap
+                        self:_text(text, textX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
+                    end
                 else
-                    local textW = estimateTextWidth(text, textSize, Drawing.Fonts.Monospace)
-                    local textX = x + math.floor((width - textW) / 2)
-                    self:_text(text, textX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
+                    self:_text(text, startContentX, textY, Theme.Text, textSize, Drawing.Fonts.Monospace, false, true, -1)
                 end
             end
         end
