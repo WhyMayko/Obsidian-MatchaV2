@@ -60,6 +60,7 @@ local function getMeasureProbe(font)
 end
 function TextManager:MeasureBounds(text, size, font, scale)
     local content = tostring(text or "")
+    if content == "" then return 0 end
     local resolvedSize = resolvedTextSize(size, scale)
     local resolvedFont = font or Drawing.Fonts.Monospace
     local key = tostring(resolvedFont) .. "\0" .. content
@@ -68,8 +69,11 @@ function TextManager:MeasureBounds(text, size, font, scale)
         local probe = getMeasureProbe(resolvedFont)
         probe.Text = content
         local bounds = probe.TextBounds
-        assert(bounds and type(bounds.X) == "number", "TextBounds must return a Vector2!")
-        cached = bounds.X
+        if bounds and type(bounds.X) == "number" and bounds.X > 0 then
+            cached = bounds.X
+        else
+            cached = #content * 8.5
+        end
         textBoundsWidths[key] = cached
     end
     return cached * resolvedSize / 14
@@ -79,20 +83,25 @@ function TextManager:Measure(text, size, font, scale)
 end
 function TextManager:Fit(text, maxWidth, size, font, scale)
     text = tostring(text or "")
+    if text == "" then return "" end
     if not maxWidth or maxWidth <= 0 then return "" end
     if self:MeasureBounds(text, size, font, scale) <= maxWidth then return text end
     local suffix = "..."
-    if self:MeasureBounds(suffix, size, font, scale) > maxWidth then return "" end
-    local low, high = 0, #text
-    while low < high do
-        local middle = math.ceil((low + high) / 2)
-        if self:MeasureBounds(text:sub(1, middle) .. suffix, size, font, scale) <= maxWidth then
-            low = middle
+    local suffixW = self:MeasureBounds(suffix, size, font, scale)
+    if suffixW >= maxWidth then return "" end
+    local low, high = 1, #text
+    local best = suffix
+    while low <= high do
+        local middle = math.floor((low + high) / 2)
+        local candidate = text:sub(1, middle) .. suffix
+        if self:MeasureBounds(candidate, size, font, scale) <= maxWidth then
+            best = candidate
+            low = middle + 1
         else
             high = middle - 1
         end
     end
-    return text:sub(1, low) .. suffix
+    return best
 end
 function TextManager:KeyName(key)
     local number = tonumber(key)
@@ -3383,16 +3392,17 @@ function GalaxObsidian:CreateWindow(options)
             valueText = currentDisplay .. "/" .. maxDisplay
         end
         local scale = self:GetScale()
-        local centeredValueW = estimateTextWidth(valueText, 14, Theme.Font)
+        local valueW = estimateTextWidth(valueText, 14, Theme.Font)
         local scaledValTextSize = math.floor(14 * scale + 0.5)
         local sliderValueText = self:_anim(widget, "slider.value.text", disabled and Theme.DimText or Theme.Text, 16)
         if not compact then
             self:_tooltip(widget, x, y, w, math.floor(33 * scale), widget)
             local sliderLabelText =
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
-            local labelMaxW = math.max(0, w - centeredValueW - math.floor(12 * scale))
+            local labelMaxW = math.max(0, w - valueW - math.floor(10 * scale))
+            local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font)
             self:_text(
-                fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font),
+                fittedLabel,
                 x,
                 y + math.floor(2 * scale),
                 sliderLabelText,
@@ -3404,7 +3414,7 @@ function GalaxObsidian:CreateWindow(options)
             )
             self:_text(
                 valueText,
-                x + w - centeredValueW,
+                x + w - valueW,
                 y + math.floor(2 * scale),
                 sliderValueText,
                 14,
@@ -6464,9 +6474,13 @@ function GalaxObsidian:CreateWindow(options)
                     type = "slider",
                     id = id,
                     label = config.Text or config.Label or label or "Slider",
+                    Text = config.Text or config.Label or label or "Slider",
                     min = minValue,
                     max = maxValue,
+                    Min = minValue,
+                    Max = maxValue,
                     value = clamp(default, minValue, maxValue),
+                    Value = clamp(default, minValue, maxValue),
                     _default = clamp(default, minValue, maxValue),
                     prefix = config.Prefix or "",
                     suffix = config.Suffix or "",
