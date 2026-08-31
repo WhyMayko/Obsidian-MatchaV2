@@ -4309,7 +4309,6 @@ function GalaxObsidian:CreateWindow(options)
         local scrollGap = math.floor(6 * scale)
         local scrollSlot = scrollTrackW + scrollGap
         local columnW = math.floor((w - pad * 2 - columnGap) / 2)
-        local fullW = w - pad * 2
         local leftY = y + pad
         local rightY = y + pad
         local layouts = {}
@@ -4325,31 +4324,19 @@ function GalaxObsidian:CreateWindow(options)
                 if not side then
                     side = (index % 2 == 0) and "Right" or "Left"
                 end
-                local isFull = side == "Full" or side == "Middle"
-                local sideName = isFull and "Left" or (side == "Right" and "Right" or "Left")
-                local useRight = (not isFull) and (sideName == "Right")
-                local sx = x + pad
-                local sy = leftY
+                local sideName = side == "Right" and "Right" or "Left"
+                local useRight = sideName == "Right"
+                local sx = useRight and (x + pad + columnW + columnGap) or (x + pad)
+                local sy = useRight and rightY or leftY
                 local sw = columnW
-                if isFull then
-                    local startY = math.max(leftY, rightY)
-                    sy = startY
-                    sw = fullW
-                elseif useRight then
-                    sx = x + pad + columnW + columnGap
-                    sy = rightY
-                end
                 local widgetW = sw - math.floor(14 * scale)
                 for _, widget in ipairs(section.widgets) do
                     widget._calcWidth = widgetW
                 end
                 local sh = self:_sectionHeight(section)
-                layouts[#layouts + 1] = { section = section, side = sideName, isFull = isFull, x = sx, y = sy, w = sw, h = sh }
+                layouts[#layouts + 1] = { section = section, side = sideName, x = sx, y = sy, w = sw, h = sh }
 
-                if isFull then
-                    leftY = sy + sh + math.floor(6 * scale)
-                    rightY = leftY
-                elseif useRight then
+                if useRight then
                     rightY = rightY + sh + math.floor(6 * scale)
                 else
                     leftY = leftY + sh + math.floor(6 * scale)
@@ -7032,10 +7019,6 @@ function GalaxObsidian:CreateWindow(options)
         function Tab:AddRightGroupbox(name)
             return Tab:AddSection(name, "Right")
         end
-        function Tab:AddFullGroupbox(name)
-            return Tab:AddSection(name, "Full")
-        end
-        Tab.AddMiddleGroupbox = Tab.AddFullGroupbox
         function Tab:AddLeftTabbox()
             local section = Tab:AddSection("__tabbox", "Left")
             return section:AddTabbox()
