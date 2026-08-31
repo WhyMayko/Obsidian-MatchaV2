@@ -3453,7 +3453,7 @@ function GalaxObsidian:CreateWindow(options)
             sliderInput.hitbox = { x = barX, y = barY, w = barW, h = barH }
             self:_renderTextInputValue(sliderInput.value, "", barX + math.floor(6 * scale), barY + math.floor((barH - scaledValTextSize) / 2), barW - math.floor(12 * scale), 14, true, false, z + 4, true, "center")
         elseif compact then
-            self:_text(valueText, barX + math.floor((barW - centeredValueW) / 2), barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+            self:_text(valueText, barX + math.floor((barW - valueW) / 2), barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
         end
         if not disabled and widget.allowRightClickInput and self.Mouse2Clicked and self:_canInteract(widget) and self:_over(barX, barY, barW, barH) then
             local input = widget._input or { type = "sliderinput", numeric = true, finished = true }
