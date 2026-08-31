@@ -62,21 +62,7 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local content = tostring(text or "")
     if content == "" then return 0 end
     local resolvedSize = resolvedTextSize(size, scale)
-    local resolvedFont = font or Drawing.Fonts.Monospace
-    local key = tostring(resolvedFont) .. "\0" .. content
-    local cached = textBoundsWidths[key]
-    if cached == nil then
-        local probe = getMeasureProbe(resolvedFont)
-        probe.Text = content
-        local bounds = probe.TextBounds
-        if bounds and type(bounds.X) == "number" and bounds.X > 0 then
-            cached = bounds.X
-        else
-            cached = #content * 8.5
-        end
-        textBoundsWidths[key] = cached
-    end
-    return cached * resolvedSize / 14
+    return #content * (resolvedSize * (8.5 / 14))
 end
 function TextManager:Measure(text, size, font, scale)
     return self:MeasureBounds(text, size, font, scale)
@@ -3506,7 +3492,9 @@ function GalaxObsidian:CreateWindow(options)
             self:_tooltip(widget, x, y, w, math.floor(33 * scale), widget)
             local sliderLabelText =
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
-            local labelMaxW = math.max(0, w - valueW - math.floor(10 * scale))
+            local rightPad = math.floor(4 * scale)
+            local gap = math.floor(12 * scale)
+            local labelMaxW = math.max(0, w - valueW - gap - rightPad)
             local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font)
             self:_text(
                 fittedLabel,
@@ -3521,7 +3509,7 @@ function GalaxObsidian:CreateWindow(options)
             )
             self:_text(
                 valueText,
-                x + w - valueW,
+                x + w - valueW - rightPad,
                 y + math.floor(2 * scale),
                 sliderValueText,
                 14,
