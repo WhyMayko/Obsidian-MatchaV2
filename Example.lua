@@ -57,7 +57,7 @@ Library:SetWatermark("Galax Hub | Obsidian Matcha V2")
 Library:SetWatermarkVisibility(true)
 
 local MainLeft = Tabs.Main:AddLeftGroupbox("Groupbox", "boxes")
-local MainRight = Tabs.Main:AddRightGroupbox("Dropdowns")
+local MainRight = Tabs.Main:AddRightGroupbox("Dropdowns", "list")
 
 MainLeft:AddToggle("MyToggle", {
     Text = "This is a toggle",
@@ -384,7 +384,7 @@ Tab1:AddToggle("Tab1Toggle", { Text = "Tab1 Toggle" })
 local Tab2 = TabBox:AddTab("Tab 2")
 Tab2:AddToggle("Tab2Toggle", { Text = "Tab2 Toggle" })
 
-local ScrollGroup = Tabs.Main:AddLeftGroupbox("Groupbox #2")
+local ScrollGroup = Tabs.Main:AddLeftGroupbox("Groupbox #2", "sliders")
 ScrollGroup:AddLabel("This label spans multiple lines! We're gonna run out of UI space...\nJust kidding! Scroll down!\n\n\nHello from below!", true)
 
 local DependencyToggle = ScrollGroup:AddToggle("ShowAdvanced", {
