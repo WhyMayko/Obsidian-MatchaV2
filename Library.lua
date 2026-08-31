@@ -2840,15 +2840,6 @@ function GalaxObsidian:CreateWindow(options)
         if self:_keyPressed(self.MenuKey) then
             self:_setOpen(not self.Open)
         end
-        if self.Open and not self.SearchFocused and not self.TextTarget and not self.DropdownSearch then
-            local isCtrl = (type(iskeypressed) == "function") and (iskeypressed(0x11) or iskeypressed(0xA2) or iskeypressed(0xA3))
-            if isCtrl and self:_keyPressed(0x46) then
-                self.SearchFocused = true
-                self.SearchText = ""
-                self:_closeFloating("search")
-                self:_claimInteraction("Search")
-            end
-        end
         if self.SearchFocused then
             local char = self:_readTextInput()
             if char == "backspace" or self:_readBackspaceRepeat() then
