@@ -3151,8 +3151,6 @@ function GalaxObsidian:CreateWindow(options)
             base = 24
         elseif widget.type == "button" then
             base = 21
-        elseif widget.type == "infocard" then
-            base = widget.height or 136
         end
         return math.floor(base * scale + 0.5)
     end
@@ -3949,110 +3947,6 @@ function GalaxObsidian:CreateWindow(options)
         end
     end
 
-    function Window:_renderInfoCard(widget, x, y, w, z)
-        local scale = self:GetScale()
-        local h = math.floor((widget.height or 136) * scale)
-        local pad = math.floor(10 * scale)
-
-        self:_square(x, y, w, h, Theme.Surface, true, 1, 6, z + 1)
-        self:_square(x, y, w, h, Theme.SoftOutline, false, 1, 6, z + 2)
-
-        local halfW = math.floor((w - pad * 3) / 2)
-        local leftX = x + pad
-        local dividerX = leftX + halfW + math.floor(pad / 2)
-        local rightX = dividerX + math.floor(pad / 2)
-
-        self:_line(dividerX, y + pad, dividerX, y + h - pad, Theme.Outline, 1, z + 2)
-
-        local avatarSize = math.floor(46 * scale)
-        local avatarY = y + pad
-        if widget.avatarData then
-            self:_image(widget.avatarData, leftX, avatarY, avatarSize, avatarSize, 6, z + 3)
-        elseif widget.avatarUrl then
-            if not widget._avatarRequested then
-                widget._avatarRequested = true
-                self:_requestImage(widget.avatarUrl, function(data)
-                    widget.avatarData = data
-                end)
-            end
-            self:_square(leftX, avatarY, avatarSize, avatarSize, Theme.Main, true, 1, 6, z + 3)
-            self:_drawIcon("user", leftX + math.floor(avatarSize / 2), avatarY + math.floor(avatarSize / 2), math.floor(22 * scale), true, z + 4)
-        else
-            self:_square(leftX, avatarY, avatarSize, avatarSize, Theme.Main, true, 1, 6, z + 3)
-            self:_drawIcon("user", leftX + math.floor(avatarSize / 2), avatarY + math.floor(avatarSize / 2), math.floor(22 * scale), true, z + 4)
-        end
-        self:_square(leftX, avatarY, avatarSize, avatarSize, Theme.Outline, false, 1, 6, z + 4)
-
-        local textStartX = leftX + avatarSize + math.floor(8 * scale)
-        local textMaxW = halfW - avatarSize - math.floor(8 * scale)
-        local titleText = tostring(widget.title or "User")
-        local badgeText = widget.badge and (" (" .. tostring(widget.badge) .. ")") or ""
-
-        local titleW = estimateTextWidth(titleText, 14, Theme.Font)
-        self:_text(fitTextToWidth(titleText, textMaxW, 14, Theme.Font), textStartX, avatarY + math.floor(4 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, z + 4)
-        if badgeText ~= "" then
-            local badgeW = estimateTextWidth(badgeText, 13, Theme.Font)
-            if titleW + badgeW <= textMaxW then
-                self:_text(badgeText, textStartX + titleW, avatarY + math.floor(4 * scale) - _yOfs(scale), Theme.Accent, 13, Drawing.Fonts.Monospace, false, true, z + 4)
-            end
-        end
-        local subtitle = tostring(widget.subtitle or "")
-        if subtitle ~= "" then
-            self:_text(fitTextToWidth(subtitle, textMaxW, 12, Theme.Font), textStartX, avatarY + math.floor(22 * scale) - _yOfs(scale), Theme.Muted, 12, Drawing.Fonts.Monospace, false, true, z + 4)
-        end
-
-        local btnH = math.floor(34 * scale)
-        local btnY = y + h - pad - btnH
-        local btnW = halfW
-        local overBtn = self:_hover(leftX, btnY, btnW, btnH, widget)
-        local btnBg = self:_anim(widget, "infocard.btn.bg", overBtn and Theme.Accent or Color3.fromRGB(75, 95, 230), 16)
-        self:_square(leftX, btnY, btnW, btnH, btnBg, true, 1, 5, z + 3)
-        self:_square(leftX, btnY, btnW, btnH, Theme.Outline2, false, 1, 5, z + 4)
-
-        local btnIcon = widget.buttonIcon or "copy"
-        local btnTitle = tostring(widget.buttonText or "Discord")
-        local btnSub = tostring(widget.buttonSubtext or "Copy")
-
-        self:_text(btnTitle, leftX + math.floor(10 * scale), btnY + math.floor(4 * scale) - _yOfs(scale), Theme.Text, 13, Drawing.Fonts.Monospace, false, true, z + 5)
-        self:_text(btnSub, leftX + math.floor(10 * scale), btnY + math.floor(18 * scale) - _yOfs(scale), Color3.fromRGB(210, 210, 255), 11, Drawing.Fonts.Monospace, false, true, z + 5)
-        self:_drawIcon(btnIcon, leftX + btnW - math.floor(16 * scale), btnY + math.floor(btnH / 2), math.floor(14 * scale), true, z + 5)
-
-        if self:_click(leftX, btnY, btnW, btnH, widget) then
-            if type(widget.onButtonClick) == "function" then
-                pcall(widget.onButtonClick)
-            end
-            self.Mouse1Clicked = false
-        end
-
-        local rightHeader = tostring(widget.serverInfoTitle or "Server information")
-        self:_text(rightHeader, rightX, y + pad + math.floor(2 * scale) - _yOfs(scale), Theme.Text, 14, Drawing.Fonts.Monospace, false, true, z + 3)
-
-        local defaultItems = {
-            { Label = "Players", Value = function() local plrs = game:GetService("Players"); local list = plrs and plrs:GetPlayers(); return tostring(list and #list or 1) .. " online" end },
-            { Label = "Region", Value = "Brazil" },
-            { Label = "FPS", Value = "60 fps" },
-            { Label = "Ping", Value = "30 ms" },
-        }
-        local items = widget.items or defaultItems
-        local itemStartY = y + pad + math.floor(24 * scale)
-        local rowH = math.floor(18 * scale)
-        local rightHalfW = w - (rightX - x) - pad
-        for idx, item in ipairs(items) do
-            local rowY = itemStartY + (idx - 1) * rowH
-            local label = tostring(item.Label or "")
-            local val = ""
-            if type(item.Value) == "function" then
-                local ok, res = pcall(item.Value)
-                val = ok and tostring(res) or "-"
-            else
-                val = tostring(item.Value or "")
-            end
-            self:_text(label, rightX, rowY - _yOfs(scale), Theme.Muted, 13, Drawing.Fonts.Monospace, false, true, z + 3)
-            local valW = estimateTextWidth(val, 13, Drawing.Fonts.Monospace)
-            self:_text(val, rightX + rightHalfW - valW, rowY - _yOfs(scale), Theme.Text, 13, Drawing.Fonts.Monospace, false, true, z + 3)
-        end
-    end
-
     function Window:_renderWidget(widget, x, y, w, z, clipTop, clipBottom)
         local previousClipTop, previousClipBottom = self._clipTop, self._clipBottom
         if clipTop ~= nil or clipBottom ~= nil then
@@ -4189,8 +4083,6 @@ function GalaxObsidian:CreateWindow(options)
             self:_renderTextbox(widget, x, y, w, z)
         elseif widget.type == "keybox" then
             self:_renderKeyBox(widget, x, y, w, z)
-        elseif widget.type == "infocard" then
-            self:_renderInfoCard(widget, x, y, w, z)
         end
         self._clipTop, self._clipBottom = previousClipTop, previousClipBottom
     end
@@ -4437,9 +4329,17 @@ function GalaxObsidian:CreateWindow(options)
                 local sectionBottom = layout.renderBottom
                 if section.Name and section.Name:sub(1, 2) ~= "__" and sy >= clipTop and sy + math.floor(34 * scale) <= clipBottom then
                     self:_line(sx, sy + math.floor(34 * scale), sx + layout.w, sy + math.floor(34 * scale), Theme.Outline, 1, z + 3)
+                    local textX = sx + math.floor(12 * scale)
+                    local maxTextW = layout.w - math.floor(24 * scale)
+                    if section.Icon and section.Icon ~= "" then
+                        local iconSize = math.floor(14 * scale)
+                        self:_drawIcon(section.Icon, textX + math.floor(iconSize / 2), sy + math.floor(17 * scale), iconSize, false, z + 4)
+                        textX = textX + iconSize + math.floor(6 * scale)
+                        maxTextW = maxTextW - iconSize - math.floor(6 * scale)
+                    end
                     self:_text(
-                        fitTextToWidth(section.Name, layout.w - math.floor(24 * scale), 15, Theme.Font),
-                        sx + math.floor(12 * scale),
+                        fitTextToWidth(section.Name, maxTextW, 15, Theme.Font),
+                        textX,
                         sy + math.floor(10 * scale),
                         Theme.Text,
                         15,
@@ -6168,12 +6068,13 @@ function GalaxObsidian:CreateWindow(options)
             self._Window:_closeFloating()
         end
 
-        function Tab:AddSection(sectionName, side)
+        function Tab:AddSection(sectionName, side, icon)
             if type(sectionName) == "table" then
                 side = sectionName.Side or sectionName.side or side
+                icon = sectionName.Icon or sectionName.icon or sectionName.IconName or icon
                 sectionName = sectionName.Name or sectionName.Text
             end
-            local Section = { Name = sectionName or "Section", widgets = {}, side = side }
+            local Section = { Name = sectionName or "Section", widgets = {}, side = side, Icon = icon }
             self.Sections[#self.Sections + 1] = Section
 
             local function register(widget)
@@ -6981,43 +6882,15 @@ function GalaxObsidian:CreateWindow(options)
             function Section:AddDependencyGroupbox()
                 return dependencyBox()
             end
-            function Section:AddInfoCard(config)
-                config = config or {}
-                local avatar = config.Avatar or config.Image or config.AvatarUrl or config.AvatarData
-                local widget = register({
-                    type = "infocard",
-                    id = config.Index or config.Idx,
-                    title = config.Title or "User",
-                    badge = config.Badge,
-                    subtitle = config.Subtitle or "",
-                    avatarUrl = (type(avatar) == "string" and not isImageData(avatar)) and imageUrl(avatar) or nil,
-                    avatarData = isImageData(avatar) and avatar or nil,
-                    buttonText = config.ButtonText or "Discord",
-                    buttonSubtext = config.ButtonSubtext or "Copy",
-                    buttonIcon = config.ButtonIcon or "copy",
-                    onButtonClick = config.OnButtonClick or config.Callback,
-                    serverInfoTitle = config.ServerInfoTitle or "Server information",
-                    items = config.Items or config.ServerItems,
-                    height = tonumber(config.Height) or 136,
-                    visible = config.Visible ~= false,
-                })
-                return Window:_widgetHandle(widget, {
-                    SetTitle = function(_, text) widget.title = tostring(text or "") end,
-                    SetBadge = function(_, text) widget.badge = text and tostring(text) or nil end,
-                    SetSubtitle = function(_, text) widget.subtitle = tostring(text or "") end,
-                    SetItems = function(_, items) widget.items = items or {} end,
-                })
-            end
-            Section.AddBanner = Section.AddInfoCard
             return Section
         end
 
         Tab.AddGroupbox = Tab.AddSection
-        function Tab:AddLeftGroupbox(name)
-            return Tab:AddSection(name, "Left")
+        function Tab:AddLeftGroupbox(name, icon)
+            return Tab:AddSection(name, "Left", icon)
         end
-        function Tab:AddRightGroupbox(name)
-            return Tab:AddSection(name, "Right")
+        function Tab:AddRightGroupbox(name, icon)
+            return Tab:AddSection(name, "Right", icon)
         end
         function Tab:AddLeftTabbox()
             local section = Tab:AddSection("__tabbox", "Left")
