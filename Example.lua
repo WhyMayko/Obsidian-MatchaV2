@@ -477,23 +477,27 @@ end)
 Library:GiveSignal(performanceConnection)
 
 task.spawn(function()
-    local steps = {
-        "Loading configuration...",
-        "Loading Lucide icons...",
-        "Preparing Drawing overlays...",
-        "Ready!",
-    }
-    for step, description in ipairs(steps) do
-        if step == 2 then
-            startupLoading:ShowSidebarPage(true)
-            local localPlayer = game:GetService("Players").LocalPlayer
-            local playerName = localPlayer and localPlayer.Name or "Player"
-            startupLoading.Sidebar:AddValue("User: " .. tostring(playerName))
-        end
-        startupLoading:SetDescription(description)
-        startupLoading:SetCurrentStep(step)
-        task.wait(0.25)
-    end
+    startupLoading:SetMessage("Initializing...")
+    startupLoading:SetDescription("Waiting for game to load...")
+    task.wait(1)
+
+    startupLoading:SetCurrentStep(1)
+    startupLoading:SetDescription("Loading configuration...")
+    task.wait(1)
+
+    startupLoading:SetCurrentStep(2)
+    startupLoading:ShowSidebarPage(true)
+    local localPlayer = game:GetService("Players").LocalPlayer
+    local playerName = localPlayer and localPlayer.Name or "Player"
+    startupLoading.Sidebar:AddLabel("User: " .. tostring(playerName))
+    startupLoading.Sidebar:AddLabel("Version: v1.0.0")
+    task.wait(1)
+
+    startupLoading:SetCurrentStep(3)
+    startupLoading:SetDescription("Ready to start!")
+    task.wait(1)
+
+    startupLoading:SetCurrentStep(4)
     startupLoading:Continue()
 end)
 

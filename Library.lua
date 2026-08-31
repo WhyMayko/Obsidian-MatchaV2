@@ -7396,6 +7396,8 @@ function GalaxObsidian:CreateLoading(options)
         self.closed = true
         window.LoadingOverlay = nil
         GalaxObsidian.ActiveLoading = nil
+        AnimationManager:Reset(self, "progress")
+        AnimationManager:Reset(self, "width")
         window:_setOpen(self.previousOpen ~= false)
     end
     loading.Continue = loading.Destroy
