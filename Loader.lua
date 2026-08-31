@@ -93,12 +93,4 @@ _G.Galax.Get = function()
     return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
 end
 
-setmetatable(_G.Galax, {
-    __call = function()
-        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
-    end,
-})
-
-Loader:Load()
-
-return _G.Galax
+return Loader:Load()
