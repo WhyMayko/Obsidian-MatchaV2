@@ -711,6 +711,17 @@ local IconAliases = {
     chevronup = "chevron-up",
     drag = "move",
     resize = "move-diagonal-2",
+    sliders = "sliders-horizontal",
+    ["sliders-vertical"] = "sliders-horizontal",
+    ["alert-triangle"] = "triangle-alert",
+    ["alert-circle"] = "circle-alert",
+    ["help-circle"] = "circle-question-mark",
+    ["more-horizontal"] = "ellipsis",
+    ["more-vertical"] = "ellipsis-vertical",
+    filter = "funnel",
+    unlock = "lock-open",
+    boxes = "layout-grid",
+    box = "square",
 }
 local IconData = {
     check = IconAssets["assets/icons/check.png"],
@@ -4331,16 +4342,18 @@ function GalaxObsidian:CreateWindow(options)
                     self:_line(sx, sy + math.floor(34 * scale), sx + layout.w, sy + math.floor(34 * scale), Theme.Outline, 1, z + 3)
                     local textX = sx + math.floor(12 * scale)
                     local maxTextW = layout.w - math.floor(24 * scale)
+                    local textY = sy + math.floor(10 * scale)
                     if section.Icon and section.Icon ~= "" then
                         local iconSize = math.floor(14 * scale)
-                        self:_drawIcon(section.Icon, textX + math.floor(iconSize / 2), sy + math.floor(17 * scale), iconSize, false, z + 4)
-                        textX = textX + iconSize + math.floor(6 * scale)
-                        maxTextW = maxTextW - iconSize - math.floor(6 * scale)
+                        local iconY = textY + math.floor(8 * scale)
+                        self:_drawIcon(section.Icon, textX + math.floor(iconSize / 2), iconY, iconSize, false, z + 4)
+                        textX = textX + iconSize + math.floor(7 * scale)
+                        maxTextW = maxTextW - iconSize - math.floor(7 * scale)
                     end
                     self:_text(
                         fitTextToWidth(section.Name, maxTextW, 15, Theme.Font),
                         textX,
-                        sy + math.floor(10 * scale),
+                        textY,
                         Theme.Text,
                         15,
                         Drawing.Fonts.Monospace,

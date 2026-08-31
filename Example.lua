@@ -58,7 +58,7 @@ local Tabs = {
 Library:SetWatermark("Galax Hub | Obsidian Matcha V2")
 Library:SetWatermarkVisibility(true)
 
-local MainLeft = Tabs.Main:AddLeftGroupbox("Groupbox", "boxes")
+local MainLeft = Tabs.Main:AddLeftGroupbox("Groupbox", "layout-grid")
 local MainRight = Tabs.Main:AddRightGroupbox("Dropdowns", "list")
 
 MainLeft:AddToggle("MyToggle", {
