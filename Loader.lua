@@ -63,35 +63,39 @@ function Loader:Load()
     local savemanager = loadModule("addons/SaveManager.lua")
     local essentialsmanager = loadModule("addons/EssentialsManager.lua")
     local webhookmanager = loadModule("addons/WebhookManager.lua")
+    local groupguard = loadModule("addons/GroupGuard.lua")
 
     library.ThemeManager = thememanager
     library.SaveManager = savemanager
     library.EssentialsManager = essentialsmanager
     library.WebhookManager = webhookmanager
+    library.GroupGuard = groupguard
 
     _G.Galax["Library.lua"] = library
     _G.Galax["addons/ThemeManager.lua"] = thememanager
     _G.Galax["addons/SaveManager.lua"] = savemanager
     _G.Galax["addons/EssentialsManager.lua"] = essentialsmanager
     _G.Galax["addons/WebhookManager.lua"] = webhookmanager
+    _G.Galax["addons/GroupGuard.lua"] = groupguard
 
     _G.Galax.Library = library
     _G.Galax.ThemeManager = thememanager
     _G.Galax.SaveManager = savemanager
     _G.Galax.EssentialsManager = essentialsmanager
     _G.Galax.WebhookManager = webhookmanager
+    _G.Galax.GroupGuard = groupguard
 
-    return library, thememanager, savemanager, essentialsmanager, webhookmanager
+    return library, thememanager, savemanager, essentialsmanager, webhookmanager, groupguard
 end
 
 _G.Galax["Loader.lua"] = Loader
 _G.Galax.Get = function()
-    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager
+    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
 end
 
 setmetatable(_G.Galax, {
     __call = function()
-        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager
+        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
     end,
 })
 
