@@ -84,6 +84,8 @@ function Loader:Load()
     _G.Galax.EssentialsManager = essentialsmanager
     _G.Galax.WebhookManager = webhookmanager
     _G.Galax.GroupGuard = groupguard
+    _G.Galax.Options = library.Options
+    _G.Galax.Toggles = library.Toggles
 
     return library, thememanager, savemanager, essentialsmanager, webhookmanager, groupguard
 end
@@ -93,4 +95,12 @@ _G.Galax.Get = function()
     return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
 end
 
-return Loader:Load()
+setmetatable(_G.Galax, {
+    __call = function()
+        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
+    end,
+})
+
+Loader:Load()
+
+return _G.Galax
