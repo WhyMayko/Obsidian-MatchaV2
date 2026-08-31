@@ -681,15 +681,38 @@ function ThemeManager:ApplyToGroupbox(groupbox)
 	self:CreateThemeManager(groupbox)
 end
 
-function ThemeManager:Add(target, ...)
-	if type(target) == "table" and (target.AddLeftGroupbox or target.AddRightGroupbox or target.AddGroupbox or target._Window or target.Sections) then
-		return self:ApplyToTab(target)
-	else
-		return self:SaveCustomTheme(target, ...)
+function ThemeManager:Add(name, data)
+	if not name or name == "" then
+		return false, "Theme name is required"
 	end
+	if type(data) == "table" then
+		self.CustomThemes[name] = data
+		return self:SaveCustomTheme(name, data)
+	end
+	local localData = self.CustomThemes[name] or readTable(ThemeFolder .. "/" .. fileName(name))
+	if localData then
+		self.CustomThemes[name] = localData
+		self:ApplyTheme(name, "local")
+		return true
+	end
+	if self.BuiltInThemes[name] then
+		self:ApplyTheme(name, "web")
+		return true
+	end
+	local url = CommunityRepo .. "themes/" .. tostring(name) .. ".txt"
+	local ok, source = pcall(game.HttpGet, game, url)
+	if ok and source and source ~= "" then
+		local okDec, decoded = pcall(function() return HttpService:JSONDecode(source) end)
+		if okDec and type(decoded) == "table" then
+			decoded.name = decoded.name or name
+			self.CustomThemes[name] = decoded
+			writeTable(ThemeFolder .. "/" .. fileName(name), decoded)
+			self:ApplyTheme(name, "local")
+			return true
+		end
+	end
+	return false, "Theme not found"
 end
-
-ThemeManager.BuildSection = ThemeManager.ApplyToTab
 
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/ThemeManager.lua"] = ThemeManager

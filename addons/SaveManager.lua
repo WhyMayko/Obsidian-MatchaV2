@@ -459,19 +459,25 @@ function SaveManager:BuildConfigSection(tab)
 	self.AutoloadConfigLabel = groupbox:AddLabel("Current autoload config: " .. tostring(self:GetAutoloadConfig()))
 end
 
-function SaveManager:ApplyToTab(tab)
-	self:BuildConfigSection(tab)
-end
-
-function SaveManager:Add(target, ...)
-	if type(target) == "table" and (target.AddLeftGroupbox or target.AddRightGroupbox or target.AddGroupbox or target._Window or target.Sections) then
-		return self:BuildConfigSection(target)
-	else
-		return self:Save(target, ...)
+function SaveManager:Add(name, data)
+	if not name or name == "" then
+		return false, "Config name is required"
 	end
+	if type(data) == "table" then
+		return self:Save(name, data)
+	end
+	if isfile(ConfigFolder .. "/" .. fileName(name)) then
+		return self:Load(name)
+	end
+	local url = CommunityRepo .. "configs/" .. tostring(name) .. ".txt"
+	local ok, source = pcall(game.HttpGet, game, url)
+	if ok and source and source ~= "" then
+		local path = ConfigFolder .. "/" .. fileName(name)
+		writefile(path, source)
+		return self:Load(name)
+	end
+	return false, "Config not found"
 end
-
-SaveManager.BuildSection = SaveManager.BuildConfigSection
 
 _G.Galax = _G.Galax or {}
 _G.Galax["addons/SaveManager.lua"] = SaveManager

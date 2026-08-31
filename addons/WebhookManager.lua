@@ -501,12 +501,18 @@ end
 WebhookManager.BuildSection = WebhookManager.BuildWebhookSection
 WebhookManager.ApplyToTab = WebhookManager.BuildSection
 
-function WebhookManager:Add(target, ...)
-	if type(target) == "table" and (target.AddLeftGroupbox or target.AddRightGroupbox or target.AddGroupbox or target._Window or target.Sections) then
-		return self:BuildSection(target)
-	else
-		return self:Save(target, ...)
+function WebhookManager:Add(name, url, avatar, username)
+	if not name or name == "" then
+		return false, "Webhook name is required"
 	end
+	local data = {
+		url = tostring(url or ""),
+		avatar = avatar,
+		username = username,
+	}
+	self.Webhooks[name] = data
+	writeTable(WebhookFolder .. "/" .. fileName(name), data)
+	return true
 end
 
 _G.Galax = _G.Galax or {}
