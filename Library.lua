@@ -2450,36 +2450,10 @@ function GalaxObsidian:CreateWindow(options)
         self.LastRobloxInputBlocked = shouldBlock
     end
 
-    function Window:_drawIcon(name, x, y, size, activeOrColor, z, opacityOverride)
+    function Window:_drawIcon(name, x, y, size, active, z, opacityOverride)
         name = tostring(name or ""):lower()
         size = size or 14
         name = IconAliases[name] or name
-
-        local IconEngine = GalaxObsidian.IconEngine or (_G.Galax and _G.Galax.IconEngine)
-        if IconEngine then
-            local targetColor = nil
-            local baseOpacity = 0.5
-            if typeof(activeOrColor) == "Color3" then
-                targetColor = activeOrColor
-                baseOpacity = 0.75
-            elseif activeOrColor == true then
-                targetColor = Theme.Accent or Theme.Text
-                baseOpacity = 1.0
-            else
-                targetColor = Theme.Accent or Theme.Text
-                baseOpacity = 0.5
-            end
-
-            local finalOpacity = opacityOverride or baseOpacity
-            local ix = math.floor(x - size / 2)
-            local iy = math.floor(y - size / 2)
-
-            local png = IconEngine:Get(name, targetColor)
-            if png then
-                return self:_image(png, ix, iy, size, size, 0, z, finalOpacity) ~= nil
-            end
-        end
-
         local data = IconData[name]
         if not data and name:match("^[%w%-]+$") then
             local url = GalaxObsidian.LucideIconUrl .. name .. ".png"
@@ -2493,7 +2467,8 @@ function GalaxObsidian:CreateWindow(options)
             return false
         end
         if not data then return false end
-        return self:_image(data, math.floor(x - size / 2), math.floor(y - size / 2), size, size, 0, z, opacityOverride or (activeOrColor == true and 1.0 or 0.5)) ~= nil
+        local opacity = opacityOverride or (active == true and 0.95 or 0.55)
+        return self:_image(data, math.floor(x - size / 2), math.floor(y - size / 2), size, size, 0, z, opacity) ~= nil
     end
     function Window:_anim(owner, key, target, speed)
         if self.AnimationsEnabled == false then
@@ -5872,7 +5847,7 @@ function GalaxObsidian:CreateWindow(options)
             local targetOpacity = active and 1.0 or (over and 0.75 or 0.5)
             local tabOpacity = self:_anim(tab, "sidebar.opacity", targetOpacity, 16)
             local tabColor = self:_animOrSnap(tab, "sidebar.text", (active or over) and Theme.Text or Theme.Muted, 16)
-            self:_drawIcon(tab.Icon or tab.Name, iconX, iconY, tabIconSize, Theme.Accent, chromeZ + 4, tabOpacity)
+            self:_drawIcon(tab.Icon or tab.Name, iconX, iconY, tabIconSize, active, chromeZ + 4, tabOpacity)
             local tabNameMaxW = sidebarW - math.floor(48 * scale)
             if tab.Badge and tab.Badge ~= "" then
                 local bText = tostring(tab.Badge)

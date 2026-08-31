@@ -64,14 +64,12 @@ function Loader:Load()
     local essentialsmanager = loadModule("addons/EssentialsManager.lua")
     local webhookmanager = loadModule("addons/WebhookManager.lua")
     local groupguard = loadModule("addons/GroupGuard.lua")
-    local iconengine = loadModule("addons/IconEngine.lua")
 
     library.ThemeManager = thememanager
     library.SaveManager = savemanager
     library.EssentialsManager = essentialsmanager
     library.WebhookManager = webhookmanager
     library.GroupGuard = groupguard
-    library.IconEngine = iconengine
 
     _G.Galax["Library.lua"] = library
     _G.Galax["addons/ThemeManager.lua"] = thememanager
@@ -79,7 +77,6 @@ function Loader:Load()
     _G.Galax["addons/EssentialsManager.lua"] = essentialsmanager
     _G.Galax["addons/WebhookManager.lua"] = webhookmanager
     _G.Galax["addons/GroupGuard.lua"] = groupguard
-    _G.Galax["addons/IconEngine.lua"] = iconengine
 
     _G.Galax.Library = library
     _G.Galax.ThemeManager = thememanager
@@ -87,21 +84,20 @@ function Loader:Load()
     _G.Galax.EssentialsManager = essentialsmanager
     _G.Galax.WebhookManager = webhookmanager
     _G.Galax.GroupGuard = groupguard
-    _G.Galax.IconEngine = iconengine
     _G.Galax.Options = library.Options
     _G.Galax.Toggles = library.Toggles
 
-    return library, thememanager, savemanager, essentialsmanager, webhookmanager, groupguard, iconengine
+    return library, thememanager, savemanager, essentialsmanager, webhookmanager, groupguard
 end
 
 _G.Galax["Loader.lua"] = Loader
 _G.Galax.Get = function()
-    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard, _G.Galax.IconEngine
+    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
 end
 
 setmetatable(_G.Galax, {
     __call = function()
-        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard, _G.Galax.IconEngine
+        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
     end,
 })
 
