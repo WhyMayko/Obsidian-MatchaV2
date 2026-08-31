@@ -13,6 +13,26 @@ Loader.CoreAssets = {
     "assets/icons/search.png",
     "assets/icons/settings.png",
     "assets/icons/user.png",
+    "assets/icons/lucide/swords.png",
+    "assets/icons/lucide/crosshair.png",
+    "assets/icons/lucide/layout-grid.png",
+    "assets/icons/lucide/list.png",
+    "assets/icons/lucide/eye.png",
+    "assets/icons/lucide/zap.png",
+    "assets/icons/lucide/compass.png",
+    "assets/icons/lucide/shield.png",
+    "assets/icons/lucide/send.png",
+    "assets/icons/lucide/sparkles.png",
+    "assets/icons/lucide/bell.png",
+    "assets/icons/lucide/activity.png",
+    "assets/icons/lucide/folder.png",
+    "assets/icons/lucide/lock.png",
+    "assets/icons/lucide/play.png",
+    "assets/icons/lucide/target.png",
+    "assets/icons/lucide/sliders-horizontal.png",
+    "assets/icons/lucide/palette.png",
+    "assets/icons/lucide/code.png",
+    "assets/icons/lucide/terminal.png",
 }
 
 _G.Galax = _G.Galax or {}
@@ -46,6 +66,10 @@ local function loadAsset(path)
     end)
     if ok and type(downloaded) == "string" and downloaded:sub(1, 8) == "\137PNG\r\n\26\n" then
         _G.Galax.Assets[path] = downloaded
+        local shortName = path:match("([^/\\]+)%.png$")
+        if shortName then
+            _G.Galax.Assets[shortName] = downloaded
+        end
         return downloaded
     end
     return nil

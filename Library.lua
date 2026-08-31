@@ -2454,17 +2454,20 @@ function GalaxObsidian:CreateWindow(options)
         name = tostring(name or ""):lower()
         size = size or 14
         name = IconAliases[name] or name
-        local data = IconData[name]
+        local data = IconData[name] or (_G.Galax and _G.Galax.Assets and (_G.Galax.Assets[name] or _G.Galax.Assets["assets/icons/lucide/" .. name .. ".png"]))
         if not data and name:match("^[%w%-]+$") then
             local url = GalaxObsidian.LucideIconUrl .. name .. ".png"
-            if not self._iconRequests[name] then
+            local cached = GalaxObsidian.ImageCache[url]
+            if cached then
+                IconData[name] = cached
+                data = cached
+            elseif not self._iconRequests[name] then
                 self._iconRequests[name] = true
                 RequestImage(url, function(downloaded)
                     IconData[name] = downloaded
                     self._iconRequests[name] = nil
                 end)
             end
-            return false
         end
         if not data then return false end
         local opacity = opacityOverride or (active == true and 0.95 or 0.55)
