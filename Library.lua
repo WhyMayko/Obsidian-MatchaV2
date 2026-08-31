@@ -3512,12 +3512,24 @@ function GalaxObsidian:CreateWindow(options)
             self:_tooltip(widget, x, y, w, math.floor(33 * scale), widget)
             local sliderLabelText =
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
-            local fittedLabel = fitTextToWidth(widget.label, w - math.floor(4 * scale), 14, Theme.Font)
+            local labelMaxW = math.max(0, w - valueW - math.floor(10 * scale))
+            local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font)
             self:_text(
                 fittedLabel,
                 x,
                 y + math.floor(2 * scale),
                 sliderLabelText,
+                14,
+                Drawing.Fonts.Monospace,
+                false,
+                true,
+                z + 2
+            )
+            self:_text(
+                valueText,
+                x + w - valueW,
+                y + math.floor(2 * scale),
+                sliderValueText,
                 14,
                 Drawing.Fonts.Monospace,
                 false,
@@ -3553,11 +3565,11 @@ function GalaxObsidian:CreateWindow(options)
         if inputFocused then
             sliderInput.hitbox = { x = barX, y = barY, w = barW, h = barH }
             self:_renderTextInputValue(sliderInput.value, "", barX + math.floor(6 * scale), barY + math.floor((barH - scaledValTextSize) / 2), barW - math.floor(12 * scale), 14, true, false, z + 4, true, "center")
-        else
-            local displayVal = fitTextToWidth(valueText, barW - math.floor(10 * scale), 14, Theme.Font)
-            local valW = estimateTextWidth(displayVal, 14, Theme.Font)
-            local valX = math.max(barX + math.floor(4 * scale), barX + math.floor((barW - valW) / 2))
-            self:_text(displayVal, valX, barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+        elseif compact then
+            local displayCompact = fitTextToWidth(valueText, barW - math.floor(10 * scale), 14, Theme.Font)
+            local compW = estimateTextWidth(displayCompact, 14, Theme.Font)
+            local compX = math.max(barX + math.floor(4 * scale), barX + math.floor((barW - compW) / 2))
+            self:_text(displayCompact, compX, barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
         end
         if not disabled and widget.allowRightClickInput and self.Mouse2Clicked and self:_canInteract(widget) and self:_over(barX, barY, barW, barH) then
             local input = widget._input or { type = "sliderinput", numeric = true, finished = true }
