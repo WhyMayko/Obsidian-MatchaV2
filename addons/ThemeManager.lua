@@ -248,15 +248,6 @@ function ThemeManager:ApplyTheme(name, themeType)
 		end
 	end
 
-	if Library.ActiveWindow and Library.ActiveWindow.SetSidebarImage then
-		Library.ActiveWindow:SetSidebarImage(
-			data.SidebarImage or nil,
-			data.SidebarImageScale,
-			data.SidebarImageX,
-			data.SidebarImageY
-		)
-	end
-
 	local win = Library.ActiveWindow
 	if win then
 		local transparency = tonumber(data.Transparency)
@@ -295,10 +286,6 @@ function ThemeManager:SaveCustomTheme(name)
 	local existingTheme = self.CustomThemes[name] or {}
 	local theme = currentThemeSnapshot(Library, name)
 
-	theme.SidebarImage = existingTheme.SidebarImage or (Library.ActiveWindow and Library.ActiveWindow.SidebarImage)
-	theme.SidebarImageScale = existingTheme.SidebarImageScale or (Library.ActiveWindow and Library.ActiveWindow.SidebarImageScale)
-	theme.SidebarImageX = existingTheme.SidebarImageX or (Library.ActiveWindow and Library.ActiveWindow.SidebarImageX)
-	theme.SidebarImageY = existingTheme.SidebarImageY or (Library.ActiveWindow and Library.ActiveWindow.SidebarImageY)
 	theme.WindowIcon = existingTheme.WindowIcon or (Library.ActiveWindow and Library.ActiveWindow.IconUrl)
 	theme.WindowTitle = existingTheme.WindowTitle
 	theme.WindowFooter = existingTheme.WindowFooter
@@ -437,7 +424,7 @@ end
 
 function ThemeManager:CreateGroupBox(tab)
 	assert(tab, "ThemeManager:CreateGroupBox requires a Tab!")
-	return tab:AddRightGroupbox("Themes", "paint-bucket")
+	return tab:AddLeftGroupbox("Themes")
 end
 
 function ThemeManager:CreateThemeManager(groupbox)

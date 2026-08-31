@@ -2534,9 +2534,6 @@ function GalaxObsidian:CreateWindow(options)
                 end
             end
         end
-        if self._sidebarImageDrawing then
-            self._sidebarImageDrawing.Visible = visible and self.SidebarImageReady == true
-        end
         if self._titleIconDrawing then
             self._titleIconDrawing.Visible = visible and self.IconReady == true
         end
@@ -5796,58 +5793,6 @@ function GalaxObsidian:CreateWindow(options)
             )
             chromeTabY = chromeTabY + tabEntryH
         end
-        if self.SidebarImageReady and self.SidebarImageData and self.SidebarImageData ~= "" then
-            if not self._sidebarImageDrawing then
-                self._sidebarImageDrawing = Drawing.new("Image")
-            end
-            local maxH = h - topH - bottomH
-
-            local imgScale = tonumber(self.SidebarImageScale) or 1.0
-            if imgScale <= 0 then imgScale = 1.0 end
-
-            local nativeW = tonumber(self.SidebarImageNativeW)
-            local nativeH = tonumber(self.SidebarImageNativeH)
-            local aspectRatio = 1
-            if nativeW and nativeW > 0 and nativeH and nativeH > 0 then
-                aspectRatio = nativeW / nativeH
-            end
-
-            local imgW = math.floor(sidebarW * imgScale)
-            local imgH = (aspectRatio > 0) and math.floor(imgW / aspectRatio) or imgW
-
-            if imgH > maxH then
-                imgH = maxH
-                imgW = math.floor(imgH * aspectRatio)
-            end
-
-            local rawOX = tonumber(self.SidebarImageX)
-            local rawOY = tonumber(self.SidebarImageY)
-            local imgX, imgY
-            if rawOX and rawOY and (rawOX ~= 0 or rawOY ~= 0) then
-                imgX = x + rawOX
-                imgY = y + topH + rawOY
-            else
-                imgX = x + math.floor((sidebarW - imgW) / 2)
-                imgY = y + h - bottomH - imgH
-            end
-            local imgObj = self._sidebarImageDrawing
-            if imgObj then
-                if self._sidebarImageLastData ~= self.SidebarImageData then
-                    local ok = pcall(function()
-                        imgObj.Data = self.SidebarImageData
-                    end)
-                    if ok then
-                        self._sidebarImageLastData = self.SidebarImageData
-                    end
-                end
-                imgObj.Position = Vector2.new(imgX, imgY)
-                imgObj.Size = Vector2.new(imgW, imgH)
-                imgObj.ZIndex = self:_zIndex(chromeZ + 3)
-                imgObj.Visible = true
-            end
-        elseif self._sidebarImageDrawing then
-            self._sidebarImageDrawing.Visible = false
-        end
         if self.ActiveTab then
             self:_renderSections(self.ActiveTab, x + sidebarW, y + topH, w - sidebarW, h - topH - bottomH, 10, y, y + h)
         end
@@ -5983,30 +5928,6 @@ function GalaxObsidian:CreateWindow(options)
         self.IconData = data
         self.IconReady = data ~= nil and data ~= ""
         self.IconNativeW, self.IconNativeH = parsePngDimensions(data)
-    end
-    function Window:SetSidebarImage(url, scale, imgX, imgY)
-        local resolved = url and imageUrl(url) or nil
-        if not resolved or resolved == "" then
-            self.SidebarImage = nil
-            self.SidebarImageData = nil
-            self.SidebarImageReady = false
-            self.SidebarImageNativeW = nil
-            self.SidebarImageNativeH = nil
-            return
-        end
-        self.SidebarImage = resolved
-        self.SidebarImageScale = scale or 1.0
-        self.SidebarImageX = imgX
-        self.SidebarImageY = imgY
-        self.SidebarImageReady = false
-        self.SidebarImageData = nil
-        self.SidebarImageNativeW = nil
-        self.SidebarImageNativeH = nil
-        RequestImage(resolved, function(data)
-            self.SidebarImageData = data
-            self.SidebarImageNativeW, self.SidebarImageNativeH = parsePngDimensions(data)
-            self.SidebarImageReady = true
-        end)
     end
     function Window:SetNotifySide(side)
         side = tostring(side or "Right")
@@ -6199,15 +6120,6 @@ function GalaxObsidian:CreateWindow(options)
                 end
             end
             self.Signals = {}
-        end
-
-        if self._sidebarImageDrawing then
-            pcall(function()
-                self._sidebarImageDrawing.Visible = false
-                self._sidebarImageDrawing:Remove()
-            end)
-            self._sidebarImageDrawing = nil
-            self._sidebarImageLastData = nil
         end
 
         if self._titleIconDrawing then
