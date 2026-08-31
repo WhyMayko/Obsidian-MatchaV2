@@ -7347,9 +7347,9 @@ function GalaxObsidian:CreateLoading(options)
     function loading:SetDescription(value) self.description = tostring(value or "") end
     function loading:SetCurrentStep(value)
         self.currentStep = clamp(tonumber(value) or self.currentStep, 0, self.totalSteps)
-        if options.AutoContinue ~= false and self.currentStep >= self.totalSteps then
+        if options.AutoContinue == true and self.currentStep >= self.totalSteps then
             task.spawn(function()
-                task.wait(0.25)
+                task.wait(0.2)
                 if not self.closed and self.currentStep >= self.totalSteps then
                     self:Continue()
                 end
