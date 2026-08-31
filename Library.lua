@@ -3284,7 +3284,7 @@ function GalaxObsidian:CreateWindow(options)
         local keyW = keyLabel and math.max(math.floor(40 * scale), math.floor(estimateTextWidth(keyLabel, keyTextSize, Theme.Font) + math.floor(26 * scale))) or 0
         local addons = widget.addons or {}
         local addonSize = math.floor(18 * scale)
-        local addonGap = math.floor(4 * scale)
+        local addonGap = math.floor(6 * scale)
         local addonCount = 0
         local addonTotalW = 0
         local addonWidths = {}
@@ -3301,7 +3301,7 @@ function GalaxObsidian:CreateWindow(options)
                 addonCount = addonCount + 1
             end
         end
-        local addonAreaW = addonCount > 0 and (addonTotalW + (addonCount - 1) * addonGap + math.floor(4 * scale)) or 0
+        local addonAreaW = addonCount > 0 and (addonTotalW + (addonCount - 1) * addonGap) or 0
         local addonStartX = switchX - addonAreaW - math.floor(6 * scale)
         local keyX = addonStartX - keyW - math.floor(6 * scale)
         local toggleText = self:_anim(widget, "toggle.text", widget.value and Theme.Text or Theme.Muted or Theme.DimText, 16)
@@ -3415,7 +3415,7 @@ function GalaxObsidian:CreateWindow(options)
             )
         end
         local labelH = compact and 0 or math.floor(18 * scale)
-        local barH = compact and math.floor(15 * scale) or math.floor(10 * scale)
+        local barH = math.floor(15 * scale)
         local barX, barY, barW = x, y + labelH, w
         if compact then
             barY = y
@@ -4067,7 +4067,7 @@ function GalaxObsidian:CreateWindow(options)
             self:_renderButtonWidget(widget, x, y, w, z)
         elseif widget.type == "buttonpair" then
             local scale = self:GetScale()
-            local gap = math.floor(8 * scale)
+            local gap = math.floor(9 * scale)
             local itemW = math.floor((w - gap) / 2)
             self:_renderButtonWidget(widget.left, x, y, itemW, z)
             self:_renderButtonWidget(widget.right, x + itemW + gap, y, w - itemW - gap, z)
