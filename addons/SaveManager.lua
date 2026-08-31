@@ -91,6 +91,11 @@ function SaveManager:SetSubFolder(folder)
 	DefaultConfigFile = root .. "/DefaultConfig.txt"
 end
 
+function SaveManager:SetLoadingOrder(enabled, order)
+	self.UseLoadingOrder = enabled == true
+	self.LoadingOrder = type(order) == "table" and order or self.LoadingOrder
+end
+
 function SaveManager:SetIgnoreIndexes(indexes)
 	for _, index in ipairs(indexes or {}) do
 		self._ignore[index] = true

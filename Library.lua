@@ -4310,8 +4310,10 @@ function GalaxObsidian:CreateWindow(options)
         local scrollGap = math.floor(6 * scale)
         local scrollSlot = scrollTrackW + scrollGap
         local columnW = math.floor((w - pad * 2 - columnGap) / 2)
-        local leftY = y + pad
-        local rightY = y + pad
+        local warningBox = tab.WarningBox
+        local warningH = (warningBox and warningBox.Visible == true) and math.floor(44 * scale) or 0
+        local leftY = y + pad + (warningH > 0 and (warningH + pad) or 0)
+        local rightY = y + pad + (warningH > 0 and (warningH + pad) or 0)
         local layouts = {}
         tab._scrollOwners = tab._scrollOwners or { Left = {}, Right = {} }
         if type(self.TabScroll[tab]) ~= "table" then
@@ -4489,6 +4491,21 @@ function GalaxObsidian:CreateWindow(options)
                     end
                 end
             end
+        end
+        if warningBox and warningBox.Visible == true then
+            local wbX = x + pad
+            local wbY = y + pad
+            local wbW = w - pad * 2
+            local wbH = warningH
+            local isNormal = warningBox.IsNormal == true
+            local bgCol = isNormal and Theme.Sidebar or Color3.fromRGB(55, 18, 18)
+            local outCol = isNormal and Theme.Outline or Color3.fromRGB(180, 45, 45)
+            local titleCol = isNormal and Theme.Text or Color3.fromRGB(255, 90, 90)
+            local textCol = isNormal and Theme.Muted or Color3.fromRGB(240, 160, 160)
+            self:_square(wbX, wbY, wbW, wbH, bgCol, true, 1, 4, z + 2)
+            self:_square(wbX, wbY, wbW, wbH, outCol, false, 1, 4, z + 3)
+            self:_text(tostring(warningBox.Title or "Warning"), wbX + math.floor(10 * scale), wbY + math.floor(6 * scale), titleCol, 14, Drawing.Fonts.Monospace, false, true, z + 4)
+            self:_text(tostring(warningBox.Text or ""), wbX + math.floor(10 * scale), wbY + math.floor(22 * scale), textCol, 13, Drawing.Fonts.Monospace, false, true, z + 4)
         end
     end
 
@@ -7076,6 +7093,20 @@ function GalaxObsidian:CreateWindow(options)
                     return selfHandle:Set(value)
                 end,
             })
+        end
+        function Tab:UpdateWarningBox(info)
+            info = info or {}
+            self.WarningBox = self.WarningBox or {
+                Visible = false,
+                Title = "Warning",
+                Text = "",
+                IsNormal = false,
+            }
+            if type(info.Visible) == "boolean" then self.WarningBox.Visible = info.Visible end
+            if type(info.IsNormal) == "boolean" then self.WarningBox.IsNormal = info.IsNormal end
+            if type(info.Title) == "string" then self.WarningBox.Title = info.Title end
+            if type(info.Text) == "string" then self.WarningBox.Text = info.Text end
+            return self.WarningBox
         end
         return Tab
     end
