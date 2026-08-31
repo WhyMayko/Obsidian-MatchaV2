@@ -422,9 +422,9 @@ function ThemeManager:SetLibrary(library)
 	self.Library = library
 end
 
-function ThemeManager:CreateGroupBox(tab)
+function ThemeManager:CreateGroupBox(tab, iconName)
 	assert(tab, "ThemeManager:CreateGroupBox requires a Tab!")
-	return tab:AddLeftGroupbox("Themes")
+	return tab:AddLeftGroupbox("Themes", iconName or "palette")
 end
 
 function ThemeManager:CreateThemeManager(groupbox)
@@ -660,8 +660,8 @@ function ThemeManager:CreateThemeManager(groupbox)
 	self:LoadDefault()
 end
 
-function ThemeManager:ApplyToTab(tab)
-	self:CreateThemeManager(self:CreateGroupBox(tab))
+function ThemeManager:ApplyToTab(tab, iconName)
+	self:CreateThemeManager(self:CreateGroupBox(tab, iconName))
 end
 
 function ThemeManager:ApplyToGroupbox(groupbox)

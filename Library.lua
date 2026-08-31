@@ -731,6 +731,8 @@ local IconAliases = {
     unlock = "lock-open",
     boxes = "layout-grid",
     box = "square",
+    paintbrush = "palette",
+    ["folder-cog"] = "folder",
 }
 local IconData = {
     check = IconAssets["assets/icons/check.png"],
@@ -5615,6 +5617,7 @@ function GalaxObsidian:CreateWindow(options)
                 iconObj.Position = Vector2.new(startX, y + math.floor((topH - iconH) / 2))
                 iconObj.Size = Vector2.new(iconW, iconH)
                 iconObj.ZIndex = self:_zIndex(chromeZ + 4)
+                iconObj.Transparency = self:_uiTransparency(1)
                 iconObj.Visible = true
             end
             startX = startX + iconW + gap

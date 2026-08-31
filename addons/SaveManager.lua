@@ -332,14 +332,14 @@ function SaveManager:LoadAutoloadConfig()
 	end
 end
 
-function SaveManager:BuildConfigSection(tab)
+function SaveManager:BuildConfigSection(tab, iconName)
 	local Library = self.Library
 	if not Library then
 		assert(false, "SaveManager:BuildConfigSection requires Library (call SetLibrary first)!")
 	end
 
 	local Options = Library.Options
-	local groupbox = tab:AddRightGroupbox("Configuration")
+	local groupbox = tab:AddRightGroupbox("Configuration", iconName or "folder")
 
 	groupbox:AddInput("SaveManager_ConfigName", {
 		Text = "Config name",
