@@ -712,6 +712,7 @@ function NotificationManager:RenderNotifications(window)
 			window.Mouse1Clicked = false
 		end
 
+		window:_drawDropShadow(x, y, currentNotifW, notifH, 7, Layers.Notification)
 		window:_square(x, y, currentNotifW, notifH, window.Theme.Background, true, 1, 7, Layers.Notification)
 		window:_square(x, y, currentNotifW, notifH, window.Theme.SoftOutline, false, 1, 7, Layers.Notification + 1)
 		for lineIndex, line in ipairs(lines) do
@@ -727,8 +728,15 @@ function NotificationManager:RenderNotifications(window)
 				Layers.Notification + 3
 			)
 		end
-		window:_square(x + math.floor(8 * scale), y + notifH - math.floor(6 * scale), currentNotifW - math.floor(16 * scale), math.floor(2 * scale), window.Theme.Main, true, 1, 1, Layers.Notification + 2)
-		window:_square(x + math.floor(8 * scale), y + notifH - math.floor(6 * scale), (currentNotifW - math.floor(16 * scale)) * remaining, math.floor(2 * scale), window.Accent, true, 1, 1, Layers.Notification + 4)
+		local barPad = math.floor(8 * scale)
+		local barW = currentNotifW - barPad * 2
+		local barH = math.max(2, math.floor(2 * scale))
+		local barY = y + notifH - barH - math.floor(4 * scale)
+		local accentColor = notif.accent or window.Accent or window.Theme.Accent
+		window:_square(x + barPad, barY, barW, barH, window.Theme.Main, true, 0.6, 1, Layers.Notification + 2)
+		if remaining > 0 then
+			window:_square(x + barPad, barY, math.max(2, math.floor(barW * remaining + 0.5)), barH, accentColor, true, 1, 1, Layers.Notification + 4)
+		end
 		stackY = stackY + notifH + math.floor(10 * scale)
 	end
 end
@@ -2066,6 +2074,13 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "ZIndex", self:_zIndex(z, 1))
         return object
     end
+    function Window:_drawDropShadow(x, y, w, h, corner, z)
+        local shadowColor = Color3.fromRGB(0, 0, 0)
+        local shadowZ = math.max(1, (z or 1) - 1)
+        self:_square(x - 3, y - 3, w + 6, h + 6, shadowColor, false, 0.08, (corner or 0) + 2, shadowZ)
+        self:_square(x - 2, y - 2, w + 4, h + 4, shadowColor, false, 0.15, (corner or 0) + 1, shadowZ)
+        self:_square(x - 1, y - 1, w + 2, h + 2, shadowColor, false, 0.25, corner or 0, shadowZ)
+    end
     function Window:_text(text, x, y, color, size, font, center, outline, z)
         local content = tostring(text or "")
         local scale = self:GetScale()
@@ -2824,6 +2839,15 @@ function GalaxObsidian:CreateWindow(options)
         end
         if self:_keyPressed(self.MenuKey) then
             self:_setOpen(not self.Open)
+        end
+        if self.Open and not self.SearchFocused and not self.TextTarget and not self.DropdownSearch then
+            local isCtrl = (type(iskeypressed) == "function") and (iskeypressed(0x11) or iskeypressed(0xA2) or iskeypressed(0xA3))
+            if isCtrl and self:_keyPressed(0x46) then
+                self.SearchFocused = true
+                self.SearchText = ""
+                self:_closeFloating("search")
+                self:_claimInteraction("Search")
+            end
         end
         if self.SearchFocused then
             local char = self:_readTextInput()
@@ -4450,6 +4474,20 @@ function GalaxObsidian:CreateWindow(options)
                         textX = textX + iconSize + math.floor(7 * scale)
                         maxTextW = maxTextW - iconSize - math.floor(7 * scale)
                     end
+                    if section.Badge and section.Badge ~= "" then
+                        local bText = tostring(section.Badge)
+                        local bTextW = TextManager:Measure(bText, 11, Theme.Font, scale)
+                        local bPad = math.floor(4 * scale)
+                        local bW = bTextW + bPad * 2
+                        local bH = math.floor(14 * scale)
+                        local bX = sx + layout.w - bW - math.floor(10 * scale)
+                        local bY = sy + math.floor(10 * scale)
+                        local bCol = section.BadgeColor or Theme.Accent
+                        self:_square(bX, bY, bW, bH, bCol, true, 0.25, 3, z + 4)
+                        self:_square(bX, bY, bW, bH, bCol, false, 0.7, 3, z + 5)
+                        self:_text(bText, bX + bPad, bY + math.floor(1 * scale) - _yOfs(scale), bCol, 11, Drawing.Fonts.Monospace, false, true, z + 6)
+                        maxTextW = maxTextW - bW - math.floor(8 * scale)
+                    end
                     self:_text(
                         fitTextToWidth(section.Name, maxTextW, 15, Theme.Font),
                         textX,
@@ -4573,6 +4611,7 @@ function GalaxObsidian:CreateWindow(options)
                 self:_releaseInteraction(widget)
             end
         end
+        self:_drawDropShadow(info.x, info.y, info.w, height, 3, info.z)
         self:_square(info.x, info.y, info.w, height, Theme.Background, true, 1, 3, info.z)
         self:_square(info.x, info.y, info.w, height, Theme.SoftOutline, false, 1, 3, info.z + 1)
         local listPad = math.floor(2 * scale)
@@ -4726,6 +4765,7 @@ function GalaxObsidian:CreateWindow(options)
         local barW = math.floor(16 * scale)
         local alphaX = hueX + barW + math.floor(6 * scale)
         local infoY = svY + svSize + math.floor(8 * scale)
+        self:_drawDropShadow(x, y, info.w, info.h, 4, z)
         self:_square(x, y, info.w, info.h, Theme.Background, true, 1, 4, z)
         self:_square(x, y, info.w, info.h, Theme.Outline, false, 1, 4, z + 1)
         if widget.title then
@@ -5275,7 +5315,7 @@ function GalaxObsidian:CreateWindow(options)
         local scale = self:GetScale()
         local text = tostring(wm.text)
         local textSize = 13
-        local tw = estimateTextWidth(text, textSize, Drawing.Fonts.Monospace) + math.floor(20 * scale)
+        local tw = estimateTextWidth(text, textSize, Drawing.Fonts.Monospace) + math.floor(24 * scale)
         local th = math.floor(24 * scale)
         local px = wm.px or 20
         local py = wm.py or 20
@@ -5300,22 +5340,39 @@ function GalaxObsidian:CreateWindow(options)
         end
 
         local z = 500
+        self:_drawDropShadow(px, py, tw, th, 3, z)
         self:_square(px, py, tw, th, Theme.Topbar, true, 0.95, 3, z)
         self:_square(px, py, tw, th, Theme.SoftOutline, false, 1, 3, z + 1)
         self:_line(px, py, px + tw, py, Theme.Accent, 2, z + 2)
         local scaledTextSize = math.floor(textSize * scale + 0.5)
         local yOfs = _yOfs(scale)
-        self:_text(
-            text,
-            px + math.floor(10 * scale),
-            py + math.floor(th / 2) - math.floor(scaledTextSize / 2) - yOfs,
-            Theme.Text,
-            textSize,
-            Drawing.Fonts.Monospace,
-            false,
-            true,
-            z + 3
-        )
+        local curX = px + math.floor(12 * scale)
+        local textY = py + math.floor(th / 2) - math.floor(scaledTextSize / 2) - yOfs
+
+        if wm.tokens and #wm.tokens > 1 then
+            for idx, token in ipairs(wm.tokens) do
+                local tokenStr = tostring(token)
+                local col = idx == 1 and Theme.Accent or Theme.Text
+                self:_text(tokenStr, curX, textY, col, textSize, Drawing.Fonts.Monospace, false, true, z + 3)
+                curX = curX + estimateTextWidth(tokenStr, textSize, Drawing.Fonts.Monospace)
+                if idx < #wm.tokens then
+                    self:_text(" | ", curX, textY, Theme.Muted, textSize, Drawing.Fonts.Monospace, false, true, z + 3)
+                    curX = curX + estimateTextWidth(" | ", textSize, Drawing.Fonts.Monospace)
+                end
+            end
+        else
+            self:_text(
+                text,
+                curX,
+                textY,
+                Theme.Text,
+                textSize,
+                Drawing.Fonts.Monospace,
+                false,
+                true,
+                z + 3
+            )
+        end
     end
 
     function Window:_renderLoading()
@@ -5616,6 +5673,7 @@ function GalaxObsidian:CreateWindow(options)
 
         local windowCorner =
             math.min(20, math.max(0, math.floor(self._cornerRadius or GalaxObsidian.CornerRadius or 0)))
+        self:_drawDropShadow(x, y, w, h, windowCorner, 1)
         self:_square(x - 1, y - 1, w + 2, h + 2, Theme.SoftOutline, true, 1, windowCorner, 1)
         self:_square(x, y, w, h, Theme.Background, true, 1, windowCorner, 2)
         self:_square(x, y, w, h, Theme.SoftOutline, false, 1, windowCorner, 3)
@@ -5796,8 +5854,23 @@ function GalaxObsidian:CreateWindow(options)
             local tabIconSize = math.max(12, math.floor(16 * scale))
             local tabColor = self:_animOrSnap(tab, "sidebar.text", (active or over) and Theme.Text or Theme.Muted, 16)
             self:_drawIcon(tab.Icon or tab.Name, iconX, iconY, tabIconSize, active or over, chromeZ + 4)
+            local tabNameMaxW = sidebarW - math.floor(48 * scale)
+            if tab.Badge and tab.Badge ~= "" then
+                local bText = tostring(tab.Badge)
+                local bTextW = TextManager:Measure(bText, 11, Theme.Font, scale)
+                local bPad = math.floor(4 * scale)
+                local bW = bTextW + bPad * 2
+                local bH = math.floor(14 * scale)
+                local bX = x + sidebarW - bW - math.floor(8 * scale)
+                local bY = chromeTabY + math.floor((tabEntryH - bH) / 2)
+                local bCol = tab.BadgeColor or Theme.Accent
+                self:_square(bX, bY, bW, bH, bCol, true, 0.25, 3, chromeZ + 4)
+                self:_square(bX, bY, bW, bH, bCol, false, 0.7, 3, chromeZ + 5)
+                self:_text(bText, bX + bPad, bY + math.floor(1 * scale) - _yOfs(scale), bCol, 11, Drawing.Fonts.Monospace, false, true, chromeZ + 6)
+                tabNameMaxW = tabNameMaxW - bW - math.floor(6 * scale)
+            end
             self:_text(
-                fitTextToWidth(tab.Name, sidebarW - math.floor(38 * scale), 16, Theme.Font),
+                fitTextToWidth(tab.Name, tabNameMaxW, 16, Theme.Font),
                 x + math.floor(38 * scale),
                 chromeTabY + math.floor(12 * scale),
                 tabColor,
@@ -5830,7 +5903,14 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     function Window:SetWatermark(text)
-        self.Watermark.text = tostring(text or "")
+        if type(text) == "table" then
+            self.Watermark.tokens = text
+            self.Watermark.text = table.concat(text, " | ")
+        else
+            self.Watermark.tokens = nil
+            self.Watermark.text = tostring(text or "")
+        end
+        self.Watermark.visible = self.Watermark.text ~= ""
     end
     function Window:SetWatermarkVisibility(visible)
         self.Watermark.visible = visible == true
@@ -6196,14 +6276,24 @@ function GalaxObsidian:CreateWindow(options)
     end
     Window.Unload = Window.Destroy
 
-    function Window:AddTab(name, icon)
+    function Window:AddTab(name, icon, config)
         local tabName = name
         local tabIcon = icon
+        local tabBadge = nil
+        local tabBadgeColor = nil
         if type(name) == "table" then
+            config = name
             tabName = name.Name or name.Title or name.Text
             tabIcon = name.Icon or name.IconName or tabIcon
+        elseif type(icon) == "table" then
+            config = icon
+            tabIcon = config.Icon or config.IconName
         end
-        local Tab = { Name = tabName or "Tab", Icon = tabIcon, Sections = {}, _Window = self }
+        if type(config) == "table" then
+            tabBadge = config.Badge or config.Tag
+            tabBadgeColor = config.BadgeColor or config.TagColor
+        end
+        local Tab = { Name = tabName or "Tab", Icon = tabIcon, Badge = tabBadge, BadgeColor = tabBadgeColor, Sections = {}, _Window = self }
 
         if not self.ActiveTab then
             self.ActiveTab = Tab
@@ -6214,13 +6304,23 @@ function GalaxObsidian:CreateWindow(options)
             self._Window:_closeFloating()
         end
 
-        function Tab:AddSection(sectionName, side, icon)
+        function Tab:AddSection(sectionName, side, icon, config)
+            local sectionBadge = nil
+            local sectionBadgeColor = nil
             if type(sectionName) == "table" then
+                config = sectionName
                 side = sectionName.Side or sectionName.side or side
                 icon = sectionName.Icon or sectionName.icon or sectionName.IconName or icon
                 sectionName = sectionName.Name or sectionName.Text
+            elseif type(icon) == "table" then
+                config = icon
+                icon = config.Icon or config.icon or config.IconName
             end
-            local Section = { Name = sectionName or "Section", widgets = {}, side = side, Icon = icon }
+            if type(config) == "table" then
+                sectionBadge = config.Badge or config.Tag
+                sectionBadgeColor = config.BadgeColor or config.TagColor
+            end
+            local Section = { Name = sectionName or "Section", widgets = {}, side = side, Icon = icon, Badge = sectionBadge, BadgeColor = sectionBadgeColor }
             self.Sections[#self.Sections + 1] = Section
 
             local function register(widget)
@@ -7053,15 +7153,19 @@ function GalaxObsidian:CreateWindow(options)
                 Section.destroyed = true
                 Section.visible = false
             end
+            function Section:SetBadge(text, color)
+                Section.Badge = text and tostring(text) or nil
+                Section.BadgeColor = color
+            end
             return Section
         end
 
         Tab.AddGroupbox = Tab.AddSection
-        function Tab:AddLeftGroupbox(name, icon)
-            return Tab:AddSection(name, "Left", icon)
+        function Tab:AddLeftGroupbox(name, icon, config)
+            return Tab:AddSection(name, "Left", icon, config)
         end
-        function Tab:AddRightGroupbox(name, icon)
-            return Tab:AddSection(name, "Right", icon)
+        function Tab:AddRightGroupbox(name, icon, config)
+            return Tab:AddSection(name, "Right", icon, config)
         end
         function Tab:AddLeftTabbox()
             local section = Tab:AddSection("__tabbox", "Left")
@@ -7107,6 +7211,10 @@ function GalaxObsidian:CreateWindow(options)
             if type(info.Title) == "string" then self.WarningBox.Title = info.Title end
             if type(info.Text) == "string" then self.WarningBox.Text = info.Text end
             return self.WarningBox
+        end
+        function Tab:SetBadge(text, color)
+            self.Badge = text and tostring(text) or nil
+            self.BadgeColor = color
         end
         return Tab
     end
