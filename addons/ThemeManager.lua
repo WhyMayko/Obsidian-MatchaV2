@@ -676,7 +676,7 @@ _G.Obsidian = _G.Obsidian or {}
 _G.Obsidian["addons/ThemeManager.lua"] = ThemeManager
 _G.Obsidian.ThemeManager = ThemeManager
 
-local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/community/"
+local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/community/"
 
 _G.community = _G.community or {}
 

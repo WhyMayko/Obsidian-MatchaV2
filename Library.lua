@@ -1,16 +1,16 @@
 local Obsidian = {}
-Obsidian.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/"
+Obsidian.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 local drawingMeta = setmetatable({}, { __mode = "k" })
 
 Obsidian.Version = "1.0.0"
 Obsidian.ImageCache = Obsidian.ImageCache or {}
 
 Obsidian.TransparencyTextureUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/TransparencyTexture.png"
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/TransparencyTexture.png"
 Obsidian.SaturationTextureUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/SaturationMap.png"
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/SaturationMap.png"
 Obsidian.LucideIconUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/icons/lucide/"
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/icons/lucide/"
 
 Obsidian.Options = {}
 Obsidian.Toggles = {}
