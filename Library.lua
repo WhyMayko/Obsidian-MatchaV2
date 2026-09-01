@@ -4895,8 +4895,18 @@ function Obsidian:CreateWindow(options)
         local rgbBoxX = x + pad + boxW + math.floor(8 * scale)
         local hexCenterX = hexBoxX + boxW / 2
         local rgbCenterX = rgbBoxX + boxW / 2
-        self:_square(hexBoxX, infoY, boxW, boxH, Theme.Main, true, 1, 3, z + 2)
-        self:_square(hexBoxX, infoY, boxW, boxH, Theme.Outline, false, 1, 3, z + 3)
+        local hexHovered = self:_hover(hexBoxX, infoY, boxW, boxH, widget)
+        local rgbHovered = self:_hover(rgbBoxX, infoY, boxW, boxH, widget)
+        if hexHovered and self:_click(hexBoxX, infoY, boxW, boxH, widget) and setclipboard then
+            pcall(setclipboard, tostring(displayHex))
+            self:Notify(string.format("Copied hex %s to clipboard!", displayHex), "ColorPicker", 2)
+        end
+        if rgbHovered and self:_click(rgbBoxX, infoY, boxW, boxH, widget) and setclipboard then
+            pcall(setclipboard, tostring(displayRgb))
+            self:Notify(string.format("Copied RGB %s to clipboard!", displayRgb), "ColorPicker", 2)
+        end
+        self:_square(hexBoxX, infoY, boxW, boxH, hexHovered and Theme.Surface or Theme.Main, true, 1, 3, z + 2)
+        self:_square(hexBoxX, infoY, boxW, boxH, hexHovered and Theme.Text or Theme.Outline, false, 1, 3, z + 3)
         local displayColor = Color3.fromHSV(widget.hue, widget.sat or 0, widget.vib or 0)
         local displayHex = colorToHexAlpha(
             displayColor,
@@ -4914,20 +4924,20 @@ function Obsidian:CreateWindow(options)
             fitTextToWidth(displayHex, boxW - math.floor(12 * scale), boxTextSize, Theme.Font),
             hexCenterX,
             boxTextY,
-            Theme.Text,
+            hexHovered and Theme.Text or Theme.Muted,
             boxTextSize,
             Drawing.Fonts.Monospace,
             true,
             true,
             z + 4
         )
-        self:_square(rgbBoxX, infoY, boxW, boxH, Theme.Main, true, 1, 3, z + 2)
-        self:_square(rgbBoxX, infoY, boxW, boxH, Theme.Outline, false, 1, 3, z + 3)
+        self:_square(rgbBoxX, infoY, boxW, boxH, rgbHovered and Theme.Surface or Theme.Main, true, 1, 3, z + 2)
+        self:_square(rgbBoxX, infoY, boxW, boxH, rgbHovered and Theme.Text or Theme.Outline, false, 1, 3, z + 3)
         self:_text(
             fitTextToWidth(displayRgb, boxW - math.floor(12 * scale), boxTextSize, Theme.Font),
             rgbCenterX,
             boxTextY,
-            Theme.Text,
+            rgbHovered and Theme.Text or Theme.Muted,
             boxTextSize,
             Drawing.Fonts.Monospace,
             true,
