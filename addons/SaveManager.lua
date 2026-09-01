@@ -6,7 +6,7 @@ local SaveManager = {
 	_autoload = "",
 }
 
-local SettingsFolder = "Galax/Obsidian/Settings"
+local SettingsFolder = "Obsidian/Settings"
 local ConfigFolder = SettingsFolder .. "/Configs"
 local DefaultConfigFile = SettingsFolder .. "/DefaultConfig.txt"
 local SubFolder
@@ -485,11 +485,11 @@ function SaveManager:Add(name, data)
 	return false, "Config not found"
 end
 
-_G.Galax = _G.Galax or {}
-_G.Galax["addons/SaveManager.lua"] = SaveManager
-_G.Galax.SaveManager = SaveManager
+_G.Obsidian = _G.Obsidian or {}
+_G.Obsidian["addons/SaveManager.lua"] = SaveManager
+_G.Obsidian.SaveManager = SaveManager
 
-local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/community/"
+local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/community/"
 
 _G.community = _G.community or {}
 

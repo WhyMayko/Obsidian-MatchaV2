@@ -55,7 +55,7 @@ for idx, theme in ipairs(BuiltInThemes) do
 end
 
 local HttpService = game:GetService("HttpService")
-local SettingsFolder = "Galax/Obsidian/Settings"
+local SettingsFolder = "Obsidian/Settings"
 local ThemeFolder = SettingsFolder .. "/Themes"
 local DefaultThemeFile = SettingsFolder .. "/DefaultTheme.txt"
 
@@ -411,7 +411,7 @@ function ThemeManager:ResetDefault()
 end
 
 function ThemeManager:SetFolder(folder)
-	SettingsFolder = tostring(folder or "Galax/Obsidian/Settings")
+	SettingsFolder = tostring(folder or "Obsidian/Settings")
 	ThemeFolder = SettingsFolder .. "/Themes"
 	DefaultThemeFile = SettingsFolder .. "/DefaultTheme.txt"
 	ensureFolder(ThemeFolder)
@@ -672,11 +672,11 @@ function ThemeManager:Add(name, data)
 	return false, "Theme not found"
 end
 
-_G.Galax = _G.Galax or {}
-_G.Galax["addons/ThemeManager.lua"] = ThemeManager
-_G.Galax.ThemeManager = ThemeManager
+_G.Obsidian = _G.Obsidian or {}
+_G.Obsidian["addons/ThemeManager.lua"] = ThemeManager
+_G.Obsidian.ThemeManager = ThemeManager
 
-local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/community/"
+local CommunityRepo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/community/"
 
 _G.community = _G.community or {}
 

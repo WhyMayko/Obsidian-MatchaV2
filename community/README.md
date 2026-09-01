@@ -21,7 +21,7 @@ To load a config from the `configs/` folder, run:
 community.loadConfig("ConfigName")
 ```
 
-The files will be automatically downloaded to your local `Galax/Obsidian/Settings/` folder and applied to your running script immediately.
+The files will be automatically downloaded to your local `Obsidian/Settings/` folder and applied to your running script immediately.
 
 ### Load a Webhook
 

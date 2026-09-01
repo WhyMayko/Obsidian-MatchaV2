@@ -1,28 +1,28 @@
-local GalaxObsidian = {}
-GalaxObsidian.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
+local Obsidian = {}
+Obsidian.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/"
 local drawingMeta = setmetatable({}, { __mode = "k" })
 
-GalaxObsidian.Version = "1.0.0"
-GalaxObsidian.ImageCache = GalaxObsidian.ImageCache or {}
+Obsidian.Version = "1.0.0"
+Obsidian.ImageCache = Obsidian.ImageCache or {}
 
-GalaxObsidian.TransparencyTextureUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/TransparencyTexture.png"
-GalaxObsidian.SaturationTextureUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/SaturationMap.png"
-GalaxObsidian.LucideIconUrl =
-    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/icons/lucide/"
+Obsidian.TransparencyTextureUrl =
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/TransparencyTexture.png"
+Obsidian.SaturationTextureUrl =
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/SaturationMap.png"
+Obsidian.LucideIconUrl =
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/assets/icons/lucide/"
 
-GalaxObsidian.Options = {}
-GalaxObsidian.Toggles = {}
+Obsidian.Options = {}
+Obsidian.Toggles = {}
 
-GalaxObsidian.Unloaded = false
-GalaxObsidian.UnloadCallbacks = {}
+Obsidian.Unloaded = false
+Obsidian.UnloadCallbacks = {}
 
-GalaxObsidian.NotifySide = "Right"
-GalaxObsidian.CornerRadius = 4
-GalaxObsidian.DPIScale = 100
-GalaxObsidian.ShowToggleFrameInKeybinds = true
-GalaxObsidian.Font = Drawing.Fonts.Monospace
+Obsidian.NotifySide = "Right"
+Obsidian.CornerRadius = 4
+Obsidian.DPIScale = 100
+Obsidian.ShowToggleFrameInKeybinds = true
+Obsidian.Font = Drawing.Fonts.Monospace
 
 local Theme
 local Layers = {
@@ -258,8 +258,8 @@ function AnimationManager:Approach(owner, key, target, speed)
 	end
 
 	state.value = nextVal
-	if nextVal ~= target and GalaxObsidian.ActiveWindow then
-		GalaxObsidian.ActiveWindow._lastActivity = timeNow
+	if nextVal ~= target and Obsidian.ActiveWindow then
+		Obsidian.ActiveWindow._lastActivity = timeNow
 	end
 	return state.value
 end
@@ -742,7 +742,7 @@ function NotificationManager:RenderNotifications(window)
 	end
 end
 
-local IconAssets = (_G.Galax and _G.Galax.Assets) or {}
+local IconAssets = (_G.Obsidian and _G.Obsidian.Assets) or {}
 local IconAliases = {
     chevron = "chevron-down",
     chevrondown = "chevron-down",
@@ -781,10 +781,10 @@ local IconData = {
     user = IconAssets["assets/icons/user.png"],
 }
 
-GalaxObsidian.TextManager = TextManager
-GalaxObsidian.AnimationManager = AnimationManager
-GalaxObsidian.DialogManager = DialogManager
-GalaxObsidian.NotificationManager = NotificationManager
+Obsidian.TextManager = TextManager
+Obsidian.AnimationManager = AnimationManager
+Obsidian.DialogManager = DialogManager
+Obsidian.NotificationManager = NotificationManager
 
 local function clamp(value, minValue, maxValue)
     if value < minValue then
@@ -1059,8 +1059,8 @@ local function makeHandle(widget)
         widget.destroyed = true
         widget.visible = false
         if widget.id then
-            GalaxObsidian.Options[widget.id] = nil
-            GalaxObsidian.Toggles[widget.id] = nil
+            Obsidian.Options[widget.id] = nil
+            Obsidian.Toggles[widget.id] = nil
         end
     end
     function handle:SetDisabled(disabled)
@@ -1295,40 +1295,40 @@ local function makeHandle(widget)
 end
 
 local function estimateTextWidth(text, size, font)
-    local scale = GalaxObsidian.ActiveWindow and GalaxObsidian.ActiveWindow:GetScale() or 1.0
-    return TextManager:Measure(text, size or GalaxObsidian.FontSize or 14, font or Theme.Font, scale)
+    local scale = Obsidian.ActiveWindow and Obsidian.ActiveWindow:GetScale() or 1.0
+    return TextManager:Measure(text, size or Obsidian.FontSize or 14, font or Theme.Font, scale)
 end
 local function fitTextToWidth(text, maxWidth, size, font)
-    local scale = GalaxObsidian.ActiveWindow and GalaxObsidian.ActiveWindow:GetScale() or 1.0
-    return TextManager:Fit(text, maxWidth, size or GalaxObsidian.FontSize or 14, font or Theme.Font, scale)
+    local scale = Obsidian.ActiveWindow and Obsidian.ActiveWindow:GetScale() or 1.0
+    return TextManager:Fit(text, maxWidth, size or Obsidian.FontSize or 14, font or Theme.Font, scale)
 end
 
-function GalaxObsidian:SetWatermark(text)
+function Obsidian:SetWatermark(text)
     self.WatermarkText = tostring(text or "")
     if self.ActiveWindow and self.ActiveWindow.SetWatermark then
         self.ActiveWindow:SetWatermark(text)
     end
 end
-function GalaxObsidian:SetWatermarkVisibility(visible)
+function Obsidian:SetWatermarkVisibility(visible)
     self.WatermarkVisible = visible == true
     if self.ActiveWindow and self.ActiveWindow.SetWatermarkVisibility then
         self.ActiveWindow:SetWatermarkVisibility(visible)
     end
 end
-function GalaxObsidian:SetKeybindMenuVisible(state)
+function Obsidian:SetKeybindMenuVisible(state)
     if self.ActiveWindow then
         self.ActiveWindow.ShowKeybindMenu = state == true
     end
 end
-function GalaxObsidian:SetFont(font)
+function Obsidian:SetFont(font)
     self.Font = font
     Theme.Font = font
 end
-function GalaxObsidian:GetTextBounds(text, font, size)
+function Obsidian:GetTextBounds(text, font, size)
     local width = TextManager:Measure(text, size or self.FontSize or 14, font or Theme.Font)
     return Vector2.new(width, size or self.FontSize or 14)
 end
-function GalaxObsidian:GetBetterColor(color, add)
+function Obsidian:GetBetterColor(color, add)
     add = tonumber(add) or 0
     return Color3.fromRGB(
         clamp(math.floor(color.R * 255 + add + 0.5), 0, 255),
@@ -1336,19 +1336,19 @@ function GalaxObsidian:GetBetterColor(color, add)
         clamp(math.floor(color.B * 255 + add + 0.5), 0, 255)
     )
 end
-function GalaxObsidian:GetLighterColor(color)
+function Obsidian:GetLighterColor(color)
     return self:GetBetterColor(color, 20)
 end
-function GalaxObsidian:GetDarkerColor(color)
+function Obsidian:GetDarkerColor(color)
     return self:GetBetterColor(color, -20)
 end
-function GalaxObsidian:SetNotifySide(side)
+function Obsidian:SetNotifySide(side)
     self.NotifySide = tostring(side) == "Left" and "Left" or "Right"
     if self.ActiveWindow then
         self.ActiveWindow.NotifySide = self.NotifySide
     end
 end
-function GalaxObsidian:SetDPIScale(percent)
+function Obsidian:SetDPIScale(percent)
     percent = tonumber(percent) or 100
     percent = math.floor(clamp(percent, 50, 200) + 0.5)
     self.DPIScale = percent
@@ -1356,7 +1356,7 @@ function GalaxObsidian:SetDPIScale(percent)
         self.ActiveWindow:SetDPIScale(percent)
     end
 end
-function GalaxObsidian:SafeCallback(func, ...)
+function Obsidian:SafeCallback(func, ...)
     if type(func) ~= "function" then return end
     local results = table.pack(pcall(func, ...))
     if not results[1] then
@@ -1367,7 +1367,7 @@ function GalaxObsidian:SafeCallback(func, ...)
     end
     return table.unpack(results, 2, results.n)
 end
-function GalaxObsidian:Validate(tbl, template)
+function Obsidian:Validate(tbl, template)
     if type(tbl) ~= "table" then return template end
     for k, v in pairs(template) do
         if type(k) ~= "number" then
@@ -1380,10 +1380,10 @@ function GalaxObsidian:Validate(tbl, template)
     end
     return tbl
 end
-function GalaxObsidian:GetKeyString(keyCode)
+function Obsidian:GetKeyString(keyCode)
     return TextManager and TextManager:KeyName(keyCode) or tostring(keyCode or "None")
 end
-function GalaxObsidian:SetBackgroundImage(image)
+function Obsidian:SetBackgroundImage(image)
     if self.ActiveWindow and self.ActiveWindow.SetBackgroundImage then
         self.ActiveWindow:SetBackgroundImage(image)
     end
@@ -1409,7 +1409,7 @@ Theme = {
     Muted = Color3.fromRGB(130, 130, 130),
     Dark = Color3.fromRGB(0, 0, 0),
     Red = Color3.fromRGB(255, 50, 50),
-    Font = GalaxObsidian.Font,
+    Font = Obsidian.Font,
 }
 
 local ChromeOffsets = {}
@@ -1475,19 +1475,19 @@ local function applyTextOffsets(base, skip)
     end
 end
 
-function GalaxObsidian:AddDraggableLabel(text)
+function Obsidian:AddDraggableLabel(text)
     local win = self.ActiveWindow
     assert(win, "AddDraggableLabel requires an active window!")
     return win:AddDraggableLabel(text)
 end
 
-function GalaxObsidian:AddDraggableButton(...)
+function Obsidian:AddDraggableButton(...)
     local win = self.ActiveWindow
     assert(win, "AddDraggableButton requires an active window!")
     return win:AddDraggableButton(...)
 end
 
-function GalaxObsidian:AddDraggableMenu(...)
+function Obsidian:AddDraggableMenu(...)
     local win = self.ActiveWindow
     assert(win, "AddDraggableMenu requires an active window!")
     return win:AddDraggableMenu(...)
@@ -1752,8 +1752,8 @@ local function resolveKeybindPopupConfig(popupConfig)
     return enabled, modes
 end
 
-function GalaxObsidian:CreateWindow(options)
-    if self.ActiveWindow or _G.GalaxObsidianActiveWindow then
+function Obsidian:CreateWindow(options)
+    if self.ActiveWindow or _G.ObsidianActiveWindow then
         self:Unload()
     end
     options = options or {}
@@ -1783,7 +1783,7 @@ function GalaxObsidian:CreateWindow(options)
     end
 
     local keybindMenuOptions = options.KeybindMenu or {}
-    local initialDPIScale = tonumber(GalaxObsidian.DPIScale) or 100
+    local initialDPIScale = tonumber(Obsidian.DPIScale) or 100
     local initialScale = clamp(initialDPIScale / 100, 0.5, 2)
     local Window = {
         Title = options.Title or "",
@@ -1793,8 +1793,8 @@ function GalaxObsidian:CreateWindow(options)
         IconReady = options.IconData ~= nil,
         IconSize = options.IconSize or 30,
         ImagesEnabled = options.EnableImages ~= false,
-        TransparencyTextureData = GalaxObsidian.ImageCache[GalaxObsidian.TransparencyTextureUrl],
-        SaturationTextureData = GalaxObsidian.ImageCache[GalaxObsidian.SaturationTextureUrl],
+        TransparencyTextureData = Obsidian.ImageCache[Obsidian.TransparencyTextureUrl],
+        SaturationTextureData = Obsidian.ImageCache[Obsidian.SaturationTextureUrl],
         LogicalSize = resolvedSize,
         Size = Vector2.new(
             math.max(math.floor(resolvedMinSize.X * initialScale + 0.5), math.floor(resolvedSize.X * initialScale + 0.5)),
@@ -1813,8 +1813,8 @@ function GalaxObsidian:CreateWindow(options)
         ShowSearch = options.ShowSearch ~= false,
         ShowKeybindMenu = options.ShowKeybindMenu == true,
         Watermark = {
-            text = GalaxObsidian.WatermarkText or "",
-            visible = GalaxObsidian.WatermarkVisible == true,
+            text = Obsidian.WatermarkText or "",
+            visible = Obsidian.WatermarkVisible == true,
             px = 20,
             py = 20,
             dragging = false,
@@ -1880,18 +1880,18 @@ function GalaxObsidian:CreateWindow(options)
         _lastActivity = tick(),
         _lastMouseX = mouse.X,
         _lastMouseY = mouse.Y,
-        _cornerRadius = GalaxObsidian.CornerRadius or 0,
-        Options = GalaxObsidian.Options,
-        Toggles = GalaxObsidian.Toggles,
+        _cornerRadius = Obsidian.CornerRadius or 0,
+        Options = Obsidian.Options,
+        Toggles = Obsidian.Toggles,
     }
 
-    GalaxObsidian.ActiveWindow = Window
+    Obsidian.ActiveWindow = Window
     local ImageLoading = {}
     local function RequestImage(url, callback)
         if not url or url == "" then
             return nil
         end
-        local cached = GalaxObsidian.ImageCache[url]
+        local cached = Obsidian.ImageCache[url]
         if cached then
             if type(callback) == "function" then
                 task.spawn(function()
@@ -1923,12 +1923,12 @@ function GalaxObsidian:CreateWindow(options)
                         return game:HttpGet(resolvedUrl)
                     end)
                     if ok and isImageData(data) then
-                        GalaxObsidian.ImageCache[resolvedUrl] = data
+                        Obsidian.ImageCache[resolvedUrl] = data
                     end
                 end
             end
             if ok and isImageData(data) then
-                GalaxObsidian.ImageCache[url] = data
+                Obsidian.ImageCache[url] = data
                 for _, cb in ipairs(ImageLoading[url]) do
                     local ok, err = pcall(cb, data)
                     if not ok then assert(false, "ImageLoading callback: " .. tostring(err) .. "!") end
@@ -1947,12 +1947,12 @@ function GalaxObsidian:CreateWindow(options)
         end)
     end
     if Window.ImagesEnabled and not Window.TransparencyTextureData then
-        RequestImage(GalaxObsidian.TransparencyTextureUrl, function(data)
+        RequestImage(Obsidian.TransparencyTextureUrl, function(data)
             Window.TransparencyTextureData = data
         end)
     end
     if Window.ImagesEnabled and not Window.SaturationTextureData then
-        RequestImage(GalaxObsidian.SaturationTextureUrl, function(data)
+        RequestImage(Obsidian.SaturationTextureUrl, function(data)
             Window.SaturationTextureData = data
         end)
     end
@@ -2090,14 +2090,14 @@ function GalaxObsidian:CreateWindow(options)
     function Window:_text(text, x, y, color, size, font, center, outline, z)
         local content = tostring(text or "")
         local scale = self:GetScale()
-        local textSize = math.floor((size or GalaxObsidian.FontSize or 14) * scale + 0.5)
+        local textSize = math.floor((size or Obsidian.FontSize or 14) * scale + 0.5)
         if not self:_clipAllowsBox(y, textSize) then
             return nil
         end
         local object = self:_get("Text")
         if not object then return nil end
         local meta = drawingMeta[object]
-        local resolvedFont = GalaxObsidian.Font
+        local resolvedFont = Obsidian.Font
         local nativeCenter = center == "native"
         setDrawingValue(object, meta, "Center", nativeCenter)
         setDrawingValue(object, meta, "Text", content)
@@ -2105,7 +2105,7 @@ function GalaxObsidian:CreateWindow(options)
         setDrawingValue(object, meta, "Font", resolvedFont)
         local textX = x
         if center == true then
-            textX = x - TextManager:MeasureBounds(content, size or GalaxObsidian.FontSize or 14, resolvedFont, scale) / 2
+            textX = x - TextManager:MeasureBounds(content, size or Obsidian.FontSize or 14, resolvedFont, scale) / 2
         end
         local yOffset = scale > 1 and -math.floor((scale - 1) * 3) or 0
         setDrawingPosition(object, meta, math.floor(textX + 0.5), math.floor(y + yOffset + 0.5))
@@ -2460,10 +2460,10 @@ function GalaxObsidian:CreateWindow(options)
         name = tostring(name or ""):lower()
         size = size or 14
         name = IconAliases[name] or name
-        local data = IconData[name] or (_G.Galax and _G.Galax.Assets and (_G.Galax.Assets[name] or _G.Galax.Assets["assets/icons/lucide/" .. name .. ".png"]))
+        local data = IconData[name] or (_G.Obsidian and _G.Obsidian.Assets and (_G.Obsidian.Assets[name] or _G.Obsidian.Assets["assets/icons/lucide/" .. name .. ".png"]))
         if not data and name:match("^[%w%-]+$") then
-            local url = GalaxObsidian.LucideIconUrl .. name .. ".png"
-            local cached = GalaxObsidian.ImageCache[url]
+            local url = Obsidian.LucideIconUrl .. name .. ".png"
+            local cached = Obsidian.ImageCache[url]
             if cached then
                 IconData[name] = cached
                 data = cached
@@ -2816,7 +2816,7 @@ function GalaxObsidian:CreateWindow(options)
 
     function Window:SetCornerRadius(radius)
         self._cornerRadius = math.min(10, math.max(0, math.floor(radius or 0)))
-        GalaxObsidian.CornerRadius = self._cornerRadius
+        Obsidian.CornerRadius = self._cornerRadius
     end
     function Window:_setOpen(state)
         self.Open = state == true
@@ -4954,7 +4954,7 @@ function GalaxObsidian:CreateWindow(options)
                     or (widget.parent == nil and widget._state == true)
                 rows[#rows + 1] = {
                     text = TextManager:FormatKeybind(widget.value, widget.label or "Keybind", mode),
-                    toggle = (mode == "Toggle") and GalaxObsidian.ShowToggleFrameInKeybinds,
+                    toggle = (mode == "Toggle") and Obsidian.ShowToggleFrameInKeybinds,
                     checked = mode == "Always" or active,
                     widget = widget,
                 }
@@ -5703,7 +5703,7 @@ function GalaxObsidian:CreateWindow(options)
         self.SearchHitbox = searchVisible and { x = searchX, y = searchY, w = searchW, h = searchH } or nil
 
         local windowCorner =
-            math.min(20, math.max(0, math.floor(self._cornerRadius or GalaxObsidian.CornerRadius or 0)))
+            math.min(20, math.max(0, math.floor(self._cornerRadius or Obsidian.CornerRadius or 0)))
         self:_drawDropShadow(x, y, w, h, windowCorner, 1)
         self:_square(x - 1, y - 1, w + 2, h + 2, Theme.SoftOutline, true, 1, windowCorner, 1)
         self:_square(x, y, w, h, Theme.Background, true, 1, windowCorner, 2)
@@ -5923,7 +5923,7 @@ function GalaxObsidian:CreateWindow(options)
         self:_renderWatermark()
         NotificationManager:RenderNotifications(self)
         self:_renderTooltip()
-        GalaxObsidian.DialogManager:RenderDialogs(self)
+        Obsidian.DialogManager:RenderDialogs(self)
         self:_hideUnused()
     end
 
@@ -6116,7 +6116,7 @@ function GalaxObsidian:CreateWindow(options)
         self.LogicalSize = logical
         self.Size = newSize
         self.Position = Vector2.new(math.floor(center.X - newSize.X / 2 + 0.5), math.floor(center.Y - newSize.Y / 2 + 0.5))
-        GalaxObsidian.DPIScale = percent
+        Obsidian.DPIScale = percent
     end
     function Window:GetTransparency()
         return self.UITransparency
@@ -6127,13 +6127,13 @@ function GalaxObsidian:CreateWindow(options)
         self.UITransparency = value
     end
     function Window:GetCornerRadius()
-        return self._cornerRadius or GalaxObsidian.CornerRadius or 4
+        return self._cornerRadius or Obsidian.CornerRadius or 4
     end
     function Window:SetCornerRadius(value)
         value = tonumber(value) or 0
         value = clamp(math.floor(value + 0.5), 0, 20)
         self._cornerRadius = value
-        GalaxObsidian.CornerRadius = value
+        Obsidian.CornerRadius = value
     end
     function Window:SetBackgroundImage(image)
         if isImageData(image) then
@@ -6292,11 +6292,11 @@ function GalaxObsidian:CreateWindow(options)
             self.Watermark.visible = false
         end
 
-        if GalaxObsidian.ActiveWindow == self then
-            GalaxObsidian.ActiveWindow = nil
+        if Obsidian.ActiveWindow == self then
+            Obsidian.ActiveWindow = nil
         end
-        if _G.GalaxObsidianActiveWindow == self then
-            _G.GalaxObsidianActiveWindow = nil
+        if _G.ObsidianActiveWindow == self then
+            _G.ObsidianActiveWindow = nil
         end
     end
     Window.Unload = Window.Destroy
@@ -6789,9 +6789,9 @@ function GalaxObsidian:CreateWindow(options)
                 local interval = specialType == "Player" and (tonumber(config.RefreshInterval) or 2) or 5
                 interval = math.max(0.25, interval)
                 task.spawn(function()
-                    while Window.Running and not GalaxObsidian.Unloaded and not widget.destroyed do
+                    while Window.Running and not Obsidian.Unloaded and not widget.destroyed do
                         task.wait(interval)
-                        if Window.Running and not GalaxObsidian.Unloaded and not widget.destroyed then
+                        if Window.Running and not Obsidian.Unloaded and not widget.destroyed then
                             widget.options = specialDropdownValues(config) or {}
                         end
                     end
@@ -7278,8 +7278,8 @@ function GalaxObsidian:CreateWindow(options)
     function Window:AddWebhookTab(name)
         local tab = self:AddTab(name or "Webhook", "send")
         tab.IsWebhookTab = true
-        local manager = _G.Galax.WebhookManager
-        manager:SetLibrary(GalaxObsidian)
+        local manager = _G.Obsidian.WebhookManager
+        manager:SetLibrary(Obsidian)
         manager:BuildSection(tab)
         return tab
     end
@@ -7287,8 +7287,8 @@ function GalaxObsidian:CreateWindow(options)
     function Window:AddGroupGuardTab(name, groupId)
         local tab = self:AddTab(name or "Group Guard", "shield")
         tab.IsGroupGuardTab = true
-        local manager = _G.Galax.GroupGuard
-        manager:SetLibrary(GalaxObsidian)
+        local manager = _G.Obsidian.GroupGuard
+        manager:SetLibrary(Obsidian)
         if groupId then
             manager:SetGroup(groupId)
         end
@@ -7310,7 +7310,7 @@ function GalaxObsidian:CreateWindow(options)
                 if not ok then
                     pcall(function() Window:_hideUnused() end)
                     if Window._lastRenderError ~= err then
-                        warn("[GalaxObsidian] Render error: " .. tostring(err))
+                        warn("[Obsidian] Render error: " .. tostring(err))
                         Window._lastRenderError = err
                     end
                 else
@@ -7325,14 +7325,14 @@ function GalaxObsidian:CreateWindow(options)
             end
         end
     end)
-    DialogManager:SetLibrary(GalaxObsidian)
-    NotificationManager:SetLibrary(GalaxObsidian)
-    GalaxObsidian.ActiveWindow = Window
-    _G.GalaxObsidianActiveWindow = Window
+    DialogManager:SetLibrary(Obsidian)
+    NotificationManager:SetLibrary(Obsidian)
+    Obsidian.ActiveWindow = Window
+    _G.ObsidianActiveWindow = Window
     return Window
 end
 
-function GalaxObsidian:CreateLoading(options)
+function Obsidian:CreateLoading(options)
     options = options or {}
     local window = self.ActiveWindow
     assert(window, "CreateLoading requires an active window!")
@@ -7400,7 +7400,7 @@ function GalaxObsidian:CreateLoading(options)
         self.loadingIcon = value and tostring(value) or nil
         self.loadingIconData = nil
         local resolved = imageUrl(value)
-        if type(value) == "string" and value:match("^[%w%-]+$") and not value:match("^%d+$") then resolved = GalaxObsidian.LucideIconUrl .. value:lower() .. ".png" end
+        if type(value) == "string" and value:match("^[%w%-]+$") and not value:match("^%d+$") then resolved = Obsidian.LucideIconUrl .. value:lower() .. ".png" end
         if resolved then window:_requestImage(resolved, function(data) self.loadingIconData = data end) end
     end
     function loading:SetLoadingIconTweenTime(value) self.loadingIconTweenTime = math.max(0, tonumber(value) or self.loadingIconTweenTime) end
@@ -7425,7 +7425,7 @@ function GalaxObsidian:CreateLoading(options)
         if self.closed then return nil end
         self.closed = true
         window.LoadingOverlay = nil
-        GalaxObsidian.ActiveLoading = nil
+        Obsidian.ActiveLoading = nil
         AnimationManager:Reset(self, "progress")
         AnimationManager:Reset(self, "width")
         window:_setOpen(self.previousOpen ~= false)
@@ -7437,14 +7437,14 @@ function GalaxObsidian:CreateLoading(options)
     local titleIcon = imageUrl(options.Icon)
     if titleIcon then window:_requestImage(titleIcon, function(data) loading.iconData = data end) end
     local loadingIcon = imageUrl(options.LoadingIcon)
-    if type(options.LoadingIcon) == "string" and options.LoadingIcon:match("^[%w%-]+$") and not options.LoadingIcon:match("^%d+$") then loadingIcon = GalaxObsidian.LucideIconUrl .. options.LoadingIcon:lower() .. ".png" end
+    if type(options.LoadingIcon) == "string" and options.LoadingIcon:match("^[%w%-]+$") and not options.LoadingIcon:match("^%d+$") then loadingIcon = Obsidian.LucideIconUrl .. options.LoadingIcon:lower() .. ".png" end
     if loadingIcon then
         window:_requestImage(loadingIcon, function(data) loading.loadingIconData = data end)
     end
     return loading
 end
 
-function GalaxObsidian:Toggle(state)
+function Obsidian:Toggle(state)
     if not self.ActiveWindow then
         return nil
     end
@@ -7454,30 +7454,30 @@ function GalaxObsidian:Toggle(state)
         self.ActiveWindow:SetVisible(state == true)
     end
 end
-function GalaxObsidian:Notify(message, title, duration)
+function Obsidian:Notify(message, title, duration)
     if not self.ActiveWindow then
         return nil
     end
     return self.ActiveWindow:Notify(message, title, duration)
 end
-function GalaxObsidian:SetCornerRadius(value)
+function Obsidian:SetCornerRadius(value)
     if self.ActiveWindow then
         self.ActiveWindow:SetCornerRadius(value)
     else
         self.CornerRadius = tonumber(value) or 0
     end
 end
-function GalaxObsidian:GetCornerRadius()
+function Obsidian:GetCornerRadius()
     if self.ActiveWindow then
         return self.ActiveWindow:GetCornerRadius()
     end
     return self.CornerRadius or 4
 end
 
-GalaxObsidian.Signals = {}
-GalaxObsidian.UnloadCallbacks = {}
+Obsidian.Signals = {}
+Obsidian.UnloadCallbacks = {}
 
-function GalaxObsidian:GiveSignal(signal)
+function Obsidian:GiveSignal(signal)
     if not signal then return nil end
     self.Signals = self.Signals or {}
     self.Signals[#self.Signals + 1] = signal
@@ -7488,14 +7488,14 @@ function GalaxObsidian:GiveSignal(signal)
     return signal
 end
 
-function GalaxObsidian:OnUnload(callback)
+function Obsidian:OnUnload(callback)
     if type(callback) == "function" then
         self.UnloadCallbacks = self.UnloadCallbacks or {}
         self.UnloadCallbacks[#self.UnloadCallbacks + 1] = callback
     end
 end
 
-function GalaxObsidian:Unload()
+function Obsidian:Unload()
     if self.Unloading then return end
     self.Unloading = true
 
@@ -7524,11 +7524,11 @@ function GalaxObsidian:Unload()
         self.ActiveWindow = nil
     end
 
-    if _G.GalaxObsidianActiveWindow and _G.GalaxObsidianActiveWindow ~= self.ActiveWindow then
-        if type(_G.GalaxObsidianActiveWindow.Destroy) == "function" then
-            _G.GalaxObsidianActiveWindow:Destroy()
+    if _G.ObsidianActiveWindow and _G.ObsidianActiveWindow ~= self.ActiveWindow then
+        if type(_G.ObsidianActiveWindow.Destroy) == "function" then
+            _G.ObsidianActiveWindow:Destroy()
         end
-        _G.GalaxObsidianActiveWindow = nil
+        _G.ObsidianActiveWindow = nil
     end
 
     for key, probe in pairs(measureProbes) do
@@ -7554,10 +7554,10 @@ function GalaxObsidian:Unload()
     self.Unloading = false
 end
 
-GalaxObsidian.Destroy = GalaxObsidian.Unload
+Obsidian.Destroy = Obsidian.Unload
 
-_G.Galax = _G.Galax or {}
-_G.Galax["Library.lua"] = GalaxObsidian
+_G.Obsidian = _G.Obsidian or {}
+_G.Obsidian["Library.lua"] = Obsidian
 
-return GalaxObsidian
+return Obsidian
 

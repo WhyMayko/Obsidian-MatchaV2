@@ -2,7 +2,7 @@ local HttpService = game:GetService("HttpService")
 
 local EssentialsManager = {
 	Library = nil,
-	Folder = "Galax/Obsidian/Settings",
+	Folder = "Obsidian/Settings",
 	Settings = {
 		KeybindMenuOpen = false,
 		InputBlock = true,
@@ -29,7 +29,7 @@ function EssentialsManager:SetLibrary(library)
 end
 
 function EssentialsManager:SetFolder(folder)
-	self.Folder = tostring(folder or "Galax/Obsidian/Settings")
+	self.Folder = tostring(folder or "Obsidian/Settings")
 	ensureFolder(self.Folder)
 end
 
@@ -205,8 +205,8 @@ function EssentialsManager:BuildSection(tab)
 	return MenuGroup
 end
 
-_G.Galax = _G.Galax or {}
-_G.Galax["addons/EssentialsManager.lua"] = EssentialsManager
-_G.Galax.EssentialsManager = EssentialsManager
+_G.Obsidian = _G.Obsidian or {}
+_G.Obsidian["addons/EssentialsManager.lua"] = EssentialsManager
+_G.Obsidian.EssentialsManager = EssentialsManager
 
 return EssentialsManager

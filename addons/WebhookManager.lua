@@ -7,7 +7,7 @@ local WebhookManager = {
 }
 
 local HttpService = game:GetService("HttpService")
-local SettingsFolder = "Galax/Obsidian/Settings"
+local SettingsFolder = "Obsidian/Settings"
 local WebhookFolder = SettingsFolder .. "/Webhooks"
 local DefaultWebhookFile = SettingsFolder .. "/DefaultWebhook.txt"
 
@@ -207,18 +207,18 @@ function WebhookManager:Test(webhookName, message)
 
 	local user = game:GetService("Players").LocalPlayer
 	local payload = {
-		content = tostring(message or "Hello from Obsidian Matcha V2!"),
+		content = tostring(message or "Hello from Obsidian Matcha!"),
 		embeds = {
 			{
 				title = "Webhook Test",
-				description = tostring(message or "Hello from Obsidian Matcha V2!"),
+				description = tostring(message or "Hello from Obsidian Matcha!"),
 				color = 0x8aa2ff,
 				fields = {
 					{ name = "User", value = user and user.Name or "Unknown", inline = true },
 					{ name = "UserId", value = user and tostring(user.UserId) or "0", inline = true },
 					{ name = "PlaceId", value = tostring(game.PlaceId or 0), inline = true },
 				},
-				footer = { text = "Obsidian Matcha V2" },
+				footer = { text = "Obsidian Matcha" },
 			}
 		}
 	}
@@ -330,7 +330,7 @@ function WebhookManager:BuildWebhookSection(tab)
 		assert(false, "WebhookManager:BuildWebhookSection requires Library (call SetLibrary first)!")
 	end
 
-	local saveManager = _G.Galax and _G.Galax.SaveManager
+	local saveManager = _G.Obsidian and _G.Obsidian.SaveManager
 	if saveManager then
 		saveManager:SetIgnoreIndexes({ "WebhookManager_TestMessage" })
 	end
@@ -358,7 +358,7 @@ function WebhookManager:BuildWebhookSection(tab)
 
 	setupSection:AddInput("WebhookManager_TestMessage", {
 		Text = "Test Message",
-		Placeholder = "Hello from Obsidian Matcha V2!",
+		Placeholder = "Hello from Obsidian Matcha!",
 	})
 
 	setupSection:AddButton({
@@ -374,9 +374,9 @@ function WebhookManager:BuildWebhookSection(tab)
 				return
 			end
 
-			local message = Options and Options.WebhookManager_TestMessage and Options.WebhookManager_TestMessage.Value or "Hello from Obsidian Matcha V2!"
+			local message = Options and Options.WebhookManager_TestMessage and Options.WebhookManager_TestMessage.Value or "Hello from Obsidian Matcha!"
 			if not message or message == "" then
-				message = "Hello from Obsidian Matcha V2!"
+				message = "Hello from Obsidian Matcha!"
 			end
 
 			local ok, err = self:Test(nil, message)
@@ -493,7 +493,7 @@ end
 function WebhookManager:BuildTab(window, name, icon)
 	assert(window, "WebhookManager:BuildTab requires a Window!")
 	local tab = window:AddTab(name or "Webhook", icon or "send")
-	self:SetLibrary(_G.Galax.Library)
+	self:SetLibrary(_G.Obsidian.Library)
 	self:BuildSection(tab)
 	return tab
 end
@@ -515,9 +515,9 @@ function WebhookManager:Add(name, url, avatar, username)
 	return true
 end
 
-_G.Galax = _G.Galax or {}
-_G.Galax["addons/WebhookManager.lua"] = WebhookManager
-_G.Galax.WebhookManager = WebhookManager
+_G.Obsidian = _G.Obsidian or {}
+_G.Obsidian["addons/WebhookManager.lua"] = WebhookManager
+_G.Obsidian.WebhookManager = WebhookManager
 
 ensureFolder(WebhookFolder)
 

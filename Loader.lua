@@ -1,6 +1,6 @@
 local Loader = {}
 
-Loader.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
+Loader.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/"
 Loader.CoreModules = {}
 Loader.CoreAssets = {
     "assets/icons/check.png",
@@ -21,7 +21,7 @@ Loader.CoreAssets = {
     "assets/icons/lucide/zap.png",
     "assets/icons/lucide/compass.png",
     "assets/icons/lucide/shield.png",
-    "assets/icons/lucide/send.png",
+    "assets/icons/send.png",
     "assets/icons/lucide/sparkles.png",
     "assets/icons/lucide/bell.png",
     "assets/icons/lucide/activity.png",
@@ -35,10 +35,10 @@ Loader.CoreAssets = {
     "assets/icons/lucide/terminal.png",
 }
 
-_G.Galax = _G.Galax or {}
+_G.Obsidian = _G.Obsidian or {}
 
 local function loadModule(path)
-    local loaded = _G.Galax[path]
+    local loaded = _G.Obsidian[path]
     if type(loaded) == "table" then
         return loaded
     end
@@ -50,25 +50,25 @@ local function loadModule(path)
     local module = chunk()
 
     if type(module) ~= "table" then
-        module = _G.Galax[path]
+        module = _G.Obsidian[path]
     end
     assert(type(module) == "table", "Loader.lua received no module from " .. path .. "!")
-    _G.Galax[path] = module
+    _G.Obsidian[path] = module
     return module
 end
 
 local function loadAsset(path)
-    _G.Galax.Assets = _G.Galax.Assets or {}
-    local data = _G.Galax.Assets[path]
+    _G.Obsidian.Assets = _G.Obsidian.Assets or {}
+    local data = _G.Obsidian.Assets[path]
     if type(data) == "string" and data ~= "" then return data end
     local ok, downloaded = pcall(function()
         return game:HttpGet(Loader.Repo .. path)
     end)
     if ok and type(downloaded) == "string" and downloaded:sub(1, 8) == "\137PNG\r\n\26\n" then
-        _G.Galax.Assets[path] = downloaded
+        _G.Obsidian.Assets[path] = downloaded
         local shortName = path:match("([^/\\]+)%.png$")
         if shortName then
-            _G.Galax.Assets[shortName] = downloaded
+            _G.Obsidian.Assets[shortName] = downloaded
         end
         return downloaded
     end
@@ -95,36 +95,36 @@ function Loader:Load()
     library.WebhookManager = webhookmanager
     library.GroupGuard = groupguard
 
-    _G.Galax["Library.lua"] = library
-    _G.Galax["addons/ThemeManager.lua"] = thememanager
-    _G.Galax["addons/SaveManager.lua"] = savemanager
-    _G.Galax["addons/EssentialsManager.lua"] = essentialsmanager
-    _G.Galax["addons/WebhookManager.lua"] = webhookmanager
-    _G.Galax["addons/GroupGuard.lua"] = groupguard
+    _G.Obsidian["Library.lua"] = library
+    _G.Obsidian["addons/ThemeManager.lua"] = thememanager
+    _G.Obsidian["addons/SaveManager.lua"] = savemanager
+    _G.Obsidian["addons/EssentialsManager.lua"] = essentialsmanager
+    _G.Obsidian["addons/WebhookManager.lua"] = webhookmanager
+    _G.Obsidian["addons/GroupGuard.lua"] = groupguard
 
-    _G.Galax.Library = library
-    _G.Galax.ThemeManager = thememanager
-    _G.Galax.SaveManager = savemanager
-    _G.Galax.EssentialsManager = essentialsmanager
-    _G.Galax.WebhookManager = webhookmanager
-    _G.Galax.GroupGuard = groupguard
-    _G.Galax.Options = library.Options
-    _G.Galax.Toggles = library.Toggles
+    _G.Obsidian.Library = library
+    _G.Obsidian.ThemeManager = thememanager
+    _G.Obsidian.SaveManager = savemanager
+    _G.Obsidian.EssentialsManager = essentialsmanager
+    _G.Obsidian.WebhookManager = webhookmanager
+    _G.Obsidian.GroupGuard = groupguard
+    _G.Obsidian.Options = library.Options
+    _G.Obsidian.Toggles = library.Toggles
 
     return library, thememanager, savemanager, essentialsmanager, webhookmanager, groupguard
 end
 
-_G.Galax["Loader.lua"] = Loader
-_G.Galax.Get = function()
-    return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
+_G.Obsidian["Loader.lua"] = Loader
+_G.Obsidian.Get = function()
+    return _G.Obsidian.Library, _G.Obsidian.ThemeManager, _G.Obsidian.SaveManager, _G.Obsidian.EssentialsManager, _G.Obsidian.WebhookManager, _G.Obsidian.GroupGuard
 end
 
-setmetatable(_G.Galax, {
+setmetatable(_G.Obsidian, {
     __call = function()
-        return _G.Galax.Library, _G.Galax.ThemeManager, _G.Galax.SaveManager, _G.Galax.EssentialsManager, _G.Galax.WebhookManager, _G.Galax.GroupGuard
+        return _G.Obsidian.Library, _G.Obsidian.ThemeManager, _G.Obsidian.SaveManager, _G.Obsidian.EssentialsManager, _G.Obsidian.WebhookManager, _G.Obsidian.GroupGuard
     end,
 })
 
 Loader:Load()
 
-return _G.Galax
+return _G.Obsidian

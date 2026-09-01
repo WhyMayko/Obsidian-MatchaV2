@@ -1,7 +1,7 @@
-local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
+local repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-Matcha/refs/heads/main/"
 loadstring(game:HttpGet(repo .. "Loader.lua"))()
 
-local Library, ThemeManager, SaveManager, EssentialsManager, WebhookManager, GroupGuard = _G.Galax()
+local Library, ThemeManager, SaveManager, EssentialsManager, WebhookManager, GroupGuard = _G.Obsidian()
 
 local Options = Library.Options
 local Toggles = Library.Toggles
@@ -55,7 +55,7 @@ local Tabs = {
     ["UI Settings"] = Window:AddTab("UI Settings", "settings"),
 }
 
-Library:SetWatermark("Galax Hub | Obsidian Matcha V2")
+Library:SetWatermark("Obsidian Matcha")
 Library:SetWatermarkVisibility(true)
 
 local MainLeft = Tabs.Main:AddLeftGroupbox("Groupbox", "layout-grid")
@@ -506,13 +506,13 @@ Library:OnUnload(function()
 end)
 
 EssentialsManager:SetLibrary(Library)
-EssentialsManager:SetFolder("Galax/Obsidian/Settings")
+EssentialsManager:SetFolder("Obsidian/Settings")
 EssentialsManager:BuildSection(Tabs["UI Settings"])
 
 SaveManager:SetLibrary(Library)
-SaveManager:SetFolder("Galax/Obsidian/Settings")
+SaveManager:SetFolder("Obsidian/Settings")
 SaveManager:BuildConfigSection(Tabs["UI Settings"])
 
 ThemeManager:SetLibrary(Library)
-ThemeManager:SetFolder("Galax/Obsidian/Settings")
+ThemeManager:SetFolder("Obsidian/Settings")
 ThemeManager:ApplyToTab(Tabs["UI Settings"])

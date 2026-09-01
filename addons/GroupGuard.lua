@@ -220,7 +220,7 @@ end
 function GroupGuard:BuildTab(window, name, icon, groupId)
 	assert(window, "GroupGuard:BuildTab requires a Window!")
 	local tab = window:AddTab(name or "Group Guard", icon or "shield")
-	self:SetLibrary(_G.Galax.Library)
+	self:SetLibrary(_G.Obsidian.Library)
 	if groupId then
 		self:SetGroup(groupId)
 	end
@@ -230,8 +230,8 @@ end
 
 GroupGuard.ApplyToTab = GroupGuard.BuildSection
 
-_G.Galax = _G.Galax or {}
-_G.Galax["addons/GroupGuard.lua"] = GroupGuard
-_G.Galax.GroupGuard = GroupGuard
+_G.Obsidian = _G.Obsidian or {}
+_G.Obsidian["addons/GroupGuard.lua"] = GroupGuard
+_G.Obsidian.GroupGuard = GroupGuard
 
 return GroupGuard
