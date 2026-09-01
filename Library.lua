@@ -3093,7 +3093,7 @@ function Obsidian:CreateWindow(options)
         return function(_, name, info)
             info = info or {}
             if info.Mode == "Press" then
-                assert(widget.type == "label", "KeyPicker with mode 'Press' can only be applied on Labels.")
+                assert(widget.type == "label", "KeyPicker with mode 'Press' can only be applied on Labels!")
                 info.SyncToggleState = false
                 info.Modes = { "Press" }
             end
