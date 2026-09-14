@@ -1664,8 +1664,12 @@ local function imageUrl(value)
     if type(value) == "number" then
         return robloxThumbnailUrl(value)
     end
-    if type(value) == "string" and value:match("^%d+$") then
-        return robloxThumbnailUrl(value)
+    if type(value) == "string" then
+        if value:match("^%d+$") then
+            return robloxThumbnailUrl(value)
+        elseif value:match("^[%w%-]+$") and not value:find("://") then
+            return Obsidian.LucideIconUrl .. value:lower() .. ".png"
+        end
     end
     return value
 end
