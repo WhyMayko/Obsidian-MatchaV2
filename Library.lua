@@ -11,6 +11,10 @@ Obsidian.SaturationTextureUrl =
     "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/SaturationMap.png"
 Obsidian.LucideIconUrl =
     "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/icons/lucide/"
+Obsidian.GalaxLogoUrl =
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/galax/logo.png"
+Obsidian.GalaxIconUrl =
+    "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/assets/galax/icon.png"
 
 Obsidian.Options = {}
 Obsidian.Toggles = {}
@@ -1665,10 +1669,14 @@ local function imageUrl(value)
         return robloxThumbnailUrl(value)
     end
     if type(value) == "string" then
+        local lower = value:lower()
+        if lower == "galax" or lower == "galaxhub" or lower == "logo" then
+            return Obsidian.GalaxIconUrl
+        end
         if value:match("^%d+$") then
             return robloxThumbnailUrl(value)
         elseif value:match("^[%w%-]+$") and not value:find("://") then
-            return Obsidian.LucideIconUrl .. value:lower() .. ".png"
+            return Obsidian.LucideIconUrl .. lower .. ".png"
         end
     end
     return value
