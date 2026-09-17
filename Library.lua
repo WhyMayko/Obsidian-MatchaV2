@@ -3131,14 +3131,18 @@ function Obsidian:CreateWindow(options)
                     end,
                     SetValue = function(_, val, mode)
                         if type(val) == "table" then
-                            addon.value = val[1] or val.Key or val.key or addon.value
+                            local resolved = val[1] or val.Key or val.key or addon.value
+                            addon.value = (resolved ~= 0 and resolved ~= "None" and resolved ~= "") and resolved or nil
                             addon.mode = val[2] or val.Mode or val.mode or addon.mode
                             addon.modifiers = val.Modifiers or val.modifiers
                         else
-                            addon.value = val
+                            addon.value = (val ~= 0 and val ~= "None" and val ~= "") and val or nil
                             addon.mode = mode or addon.mode
                         end
                         safeCall(addon.changed, addon.value, addon.modifiers)
+                    end,
+                    SetKey = function(selfHandle, val, mode)
+                        return selfHandle:SetValue(val, mode)
                     end,
                     OnChanged = function(_, cb)
                         addon.changed = cb
