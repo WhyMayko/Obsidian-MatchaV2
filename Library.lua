@@ -1074,7 +1074,12 @@ local function makeHandle(widget)
         widget.tooltip = tooltip and tostring(tooltip) or nil
     end
     function handle:SetKey(key)
-        widget.keybind = key
+        local resolved = (key ~= 0 and key ~= "None" and key ~= "") and key or nil
+        if widget.type == "keybind" then
+            widget.value = resolved
+        else
+            widget.keybind = resolved
+        end
     end
     function handle:SetPlaceholder(text)
         widget.placeholder = tostring(text or "")
