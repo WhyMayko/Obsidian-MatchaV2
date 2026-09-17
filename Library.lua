@@ -45,7 +45,7 @@ local keyNames = { [1] = "M1", [2] = "M2", [3] = "Cancel", [4] = "M3", [5] = "M4
 for key = 48, 57 do TextManager.TextChars[key] = string.char(key); keyNames[key] = string.char(key) end
 for key = 65, 90 do TextManager.TextChars[key] = string.char(key + 32); keyNames[key] = string.char(key) end
 local function resolvedTextSize(size, scale)
-    return math.max(1, scale and math.floor((size or 13) * scale + 0.5) or math.floor(size or 13))
+    return math.max(1, scale and math.floor((size or Obsidian.FontSize or 14) * scale + 0.5) or math.floor(size or Obsidian.FontSize or 14))
 end
 local function getMeasureProbe(font)
     local resolvedFont = font or Drawing.Fonts.Monospace
@@ -71,11 +71,11 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local cached = textBoundsWidths[key]
     if cached == nil then
         local probe = getMeasureProbe(resolvedFont)
-        probe.Size = resolvedSize
+        probe.Size = 14
         probe.Text = content
         local bounds = probe.TextBounds
         if bounds and type(bounds.X) == "number" and bounds.X > 0 then
-            cached = bounds.X
+            cached = bounds.X * (resolvedSize / 14)
         else
             cached = #content * (resolvedSize * (7.2 / 14))
         end
@@ -1300,11 +1300,11 @@ end
 
 local function estimateTextWidth(text, size, font)
     local scale = Obsidian.ActiveWindow and Obsidian.ActiveWindow:GetScale() or 1.0
-    return TextManager:Measure(text, size or Obsidian.FontSize or 14, font or Theme.Font, scale)
+    return TextManager:Measure(text, size or Obsidian.FontSize or 14, font or (Theme and Theme.Font) or Drawing.Fonts.Monospace, scale)
 end
 local function fitTextToWidth(text, maxWidth, size, font)
     local scale = Obsidian.ActiveWindow and Obsidian.ActiveWindow:GetScale() or 1.0
-    return TextManager:Fit(text, maxWidth, size or Obsidian.FontSize or 14, font or Theme.Font, scale)
+    return TextManager:Fit(text, maxWidth, size or Obsidian.FontSize or 14, font or (Theme and Theme.Font) or Drawing.Fonts.Monospace, scale)
 end
 
 function Obsidian:SetWatermark(text)
@@ -3080,7 +3080,7 @@ function Obsidian:CreateWindow(options)
             isAddon = true,
             id = name,
             label = info.Text or info.Label or tostring(name or "Keybind"),
-            value = info.Default,
+            value = (info.Default ~= 0 and info.Default ~= "None" and info.Default ~= "") and info.Default or nil,
             mode = info.Mode or "Hold",
             syncToggleState = info.SyncToggleState == true,
             callback = info.Callback,
@@ -3338,7 +3338,7 @@ function Obsidian:CreateWindow(options)
     end
 
     function Window:_renderAddonKeybind(addon, ax, y, aw, asz, ts, z, fc)
-        local l = addon.listening and "..." or (addon.value and keyName(addon.value) or "?")
+        local l = addon.listening and "..." or ((addon.value and addon.value ~= 0 and addon.value ~= "None") and keyName(addon.value) or "?")
         self:_handleKeybindHoldClear(addon)
         local sc = self:GetScale()
         self:_square(ax, y, aw, asz, Theme.Surface, true, 1, 2, z + 1)
@@ -3357,7 +3357,7 @@ function Obsidian:CreateWindow(options)
         local boxX = x
         local disabled = widget.disabled == true
         local keyLabel = (widget._hasKeyPicker or widget.listening or widget._keybindCleared)
-            and (widget.listening and "..." or (widget.keybind and keyName(widget.keybind) or "?"))
+            and (widget.listening and "..." or ((widget.keybind and widget.keybind ~= 0 and widget.keybind ~= "None") and keyName(widget.keybind) or "?"))
             or nil
         local keyTextSize = 14
         local keyH = math.floor(18 * scale)
@@ -3411,7 +3411,7 @@ function Obsidian:CreateWindow(options)
         local switchX = x + w - switchW
         local switchY = y + math.floor(0 * scale)
         local keyLabel = (widget._hasKeyPicker or widget.listening or widget._keybindCleared)
-            and (widget.listening and "..." or (widget.keybind and keyName(widget.keybind) or "?"))
+            and (widget.listening and "..." or ((widget.keybind and widget.keybind ~= 0 and widget.keybind ~= "None") and keyName(widget.keybind) or "?"))
             or nil
         local keyTextSize = 14
         local keyH = math.floor(18 * scale)
@@ -3426,7 +3426,7 @@ function Obsidian:CreateWindow(options)
             if a.visible ~= false then
                 local aw = addonSize
                 if a.type == "keybind" then
-                    local kLabel = a.listening and "..." or (a.value and keyName(a.value) or "?")
+                    local kLabel = a.listening and "..." or ((a.value and a.value ~= 0 and a.value ~= "None") and keyName(a.value) or "?")
                     local textW = estimateTextWidth(kLabel, keyTextSize, Theme.Font)
                     aw = math.max(addonSize, textW + math.floor(12 * scale))
                 end
@@ -3524,6 +3524,11 @@ function Obsidian:CreateWindow(options)
             self:_tooltip(widget, x, y, w, math.floor(33 * scale), widget)
             local sliderLabelText =
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
+            local maxValW = math.max(0, w - math.floor(10 * scale))
+            if valueW > maxValW then
+                valueText = fitTextToWidth(valueText, maxValW, 14, Theme.Font)
+                valueW = estimateTextWidth(valueText, 14, Theme.Font)
+            end
             local labelMaxW = math.max(0, w - valueW - math.floor(10 * scale))
             local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font)
             self:_text(
@@ -4969,24 +4974,30 @@ function Obsidian:CreateWindow(options)
             if widget.visible == false or widget.popupEnabled == false then
                 return nil
             end
-            if widget.type == "keybind" and widget.value then
-                local mode = tostring(widget.mode or "Hold")
-                local active = mode == "Always"
-                    or (widget.parent ~= nil and widget.parent.value == true)
-                    or (widget.parent == nil and widget._state == true)
-                rows[#rows + 1] = {
-                    text = TextManager:FormatKeybind(widget.value, widget.label or "Keybind", mode),
-                    toggle = (mode == "Toggle") and Obsidian.ShowToggleFrameInKeybinds,
-                    checked = mode == "Always" or active,
-                    widget = widget,
-                }
-            elseif (_isToggle(widget)) and widget.keybind then
-                rows[#rows + 1] = {
-                    text = TextManager:FormatKeybind(widget.keybind, widget.label or "Toggle", "Toggle"),
-                    toggle = true,
-                    checked = widget.value == true,
-                    widget = widget,
-                }
+            if widget.type == "keybind" and widget.value and widget.value ~= 0 and widget.value ~= "None" and widget.value ~= "" then
+                local keyName = TextManager:KeyName(widget.value)
+                if keyName and keyName ~= "None" and keyName ~= "" then
+                    local mode = tostring(widget.mode or "Hold")
+                    local active = mode == "Always"
+                        or (widget.parent ~= nil and widget.parent.value == true)
+                        or (widget.parent == nil and widget._state == true)
+                    rows[#rows + 1] = {
+                        text = TextManager:FormatKeybind(widget.value, widget.label or "Keybind", mode),
+                        toggle = (mode == "Toggle") and Obsidian.ShowToggleFrameInKeybinds,
+                        checked = mode == "Always" or active,
+                        widget = widget,
+                    }
+                end
+            elseif (_isToggle(widget)) and widget.keybind and widget.keybind ~= 0 and widget.keybind ~= "None" and widget.keybind ~= "" then
+                local keyName = TextManager:KeyName(widget.keybind)
+                if keyName and keyName ~= "None" and keyName ~= "" then
+                    rows[#rows + 1] = {
+                        text = TextManager:FormatKeybind(widget.keybind, widget.label or "Toggle", "Toggle"),
+                        toggle = true,
+                        checked = widget.value == true,
+                        widget = widget,
+                    }
+                end
             elseif widget.type == "sectiontabs" then
                 local active = widget.tabs[widget.active or 1]
                 if active then
