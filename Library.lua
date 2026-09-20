@@ -70,14 +70,18 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
     local cached = textBoundsWidths[key]
     if cached == nil then
-        local probe = getMeasureProbe(resolvedFont)
-        probe.Size = 14
-        probe.Text = content
-        local bounds = probe.TextBounds
-        if bounds and type(bounds.X) == "number" and bounds.X > 0 then
-            cached = bounds.X * (resolvedSize / 14)
+        if resolvedFont == Drawing.Fonts.Monospace or resolvedFont == 3 then
+            cached = math.ceil(#content * (resolvedSize * (8.1 / 14)))
         else
-            cached = #content * (resolvedSize * (7.2 / 14))
+            local probe = getMeasureProbe(resolvedFont)
+            probe.Size = 14
+            probe.Text = content
+            local bounds = probe.TextBounds
+            if bounds and type(bounds.X) == "number" and bounds.X > 0 then
+                cached = bounds.X * (resolvedSize / 14)
+            else
+                cached = math.ceil(#content * (resolvedSize * (8.1 / 14)))
+            end
         end
         textBoundsWidths[key] = cached
     end
@@ -3526,7 +3530,7 @@ function Obsidian:CreateWindow(options)
             valueText = currentDisplay .. "/" .. maxDisplay
         end
         local scale = self:GetScale()
-        local valueW = estimateTextWidth(valueText, 14, Theme.Font)
+        local valueW = estimateTextWidth(valueText, 14, Drawing.Fonts.Monospace)
         local scaledValTextSize = math.floor(14 * scale + 0.5)
         local sliderValueText = self:_anim(widget, "slider.value.text", disabled and Theme.DimText or Theme.Text, 16)
         if not compact then
@@ -3535,11 +3539,11 @@ function Obsidian:CreateWindow(options)
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
             local maxValW = math.max(0, w - math.floor(10 * scale))
             if valueW > maxValW then
-                valueText = fitTextToWidth(valueText, maxValW, 14, Theme.Font)
-                valueW = estimateTextWidth(valueText, 14, Theme.Font)
+                valueText = fitTextToWidth(valueText, maxValW, 14, Drawing.Fonts.Monospace)
+                valueW = estimateTextWidth(valueText, 14, Drawing.Fonts.Monospace)
             end
             local labelMaxW = math.max(0, w - valueW - math.floor(10 * scale))
-            local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14, Theme.Font)
+            local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14, Drawing.Fonts.Monospace)
             self:_text(
                 fittedLabel,
                 x,
@@ -3592,8 +3596,8 @@ function Obsidian:CreateWindow(options)
             sliderInput.hitbox = { x = barX, y = barY, w = barW, h = barH }
             self:_renderTextInputValue(sliderInput.value, "", barX + math.floor(6 * scale), barY + math.floor((barH - scaledValTextSize) / 2), barW - math.floor(12 * scale), 14, true, false, z + 4, true, "center")
         elseif compact then
-            local displayCompact = fitTextToWidth(valueText, barW - math.floor(10 * scale), 14, Theme.Font)
-            local compW = estimateTextWidth(displayCompact, 14, Theme.Font)
+            local displayCompact = fitTextToWidth(valueText, barW - math.floor(10 * scale), 14, Drawing.Fonts.Monospace)
+            local compW = estimateTextWidth(displayCompact, 14, Drawing.Fonts.Monospace)
             local compX = math.max(barX + math.floor(4 * scale), barX + math.floor((barW - compW) / 2))
             self:_text(displayCompact, compX, barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
         end
