@@ -70,18 +70,14 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
     local cached = textBoundsWidths[key]
     if cached == nil then
-        if resolvedFont == Drawing.Fonts.Monospace or resolvedFont == 3 then
-            cached = math.ceil(#content * (resolvedSize * (8.1 / 14)))
+        local probe = getMeasureProbe(resolvedFont)
+        probe.Size = 14
+        probe.Text = content
+        local bounds = probe.TextBounds
+        if bounds and type(bounds.X) == "number" and bounds.X > 0 then
+            cached = bounds.X * (resolvedSize / 14)
         else
-            local probe = getMeasureProbe(resolvedFont)
-            probe.Size = 14
-            probe.Text = content
-            local bounds = probe.TextBounds
-            if bounds and type(bounds.X) == "number" and bounds.X > 0 then
-                cached = bounds.X * (resolvedSize / 14)
-            else
-                cached = math.ceil(#content * (resolvedSize * (8.1 / 14)))
-            end
+            cached = #content * 7 * (resolvedSize / 14)
         end
         textBoundsWidths[key] = cached
     end
