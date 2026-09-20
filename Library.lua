@@ -1822,7 +1822,19 @@ function Obsidian:CreateWindow(options)
         UITransparency = clamp(tonumber(options.Transparency) or 1, 0.1, 1),
         Resizable = options.Resizable ~= false,
         MenuKey = options.MenuKey or 0x70,
-        Position = Vector2.new(options.X or 180, options.Y or 130),
+        Position = (function()
+            local initX = options.X
+            local initY = options.Y
+            if options.Center == true or options.AutoCenter == true or (initX == nil and initY == nil and options.Center ~= false) then
+                local cam = workspace.CurrentCamera
+                local vp = cam and cam.ViewportSize
+                if vp and vp.X > 0 and vp.Y > 0 then
+                    initX = math.floor((vp.X - resolvedSize.X * initialScale) / 2)
+                    initY = math.floor((vp.Y - resolvedSize.Y * initialScale) / 2)
+                end
+            end
+            return Vector2.new(initX or options.X or 180, initY or options.Y or 130)
+        end)(),
         Accent = options.Accent or Theme.Accent,
         SearchPlaceholder = options.SearchPlaceholder or "Search",
         SearchText = "",
