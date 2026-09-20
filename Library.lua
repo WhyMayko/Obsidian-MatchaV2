@@ -39,28 +39,12 @@ local Layers = {
 }
 
 local TextManager = { TextChars = {} }
-local measureProbes = {}
 local textBoundsWidths = {}
 local keyNames = { [1] = "M1", [2] = "M2", [3] = "Cancel", [4] = "M3", [5] = "M4", [6] = "M5", [8] = "Back", [9] = "Tab", [13] = "Enter", [16] = "Shift", [17] = "Ctrl", [18] = "Alt", [27] = "Esc", [32] = "Space", [33] = "PageUp", [34] = "PageDown", [35] = "End", [36] = "Home", [37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down", [45] = "Insert", [46] = "Delete" }
 for key = 48, 57 do TextManager.TextChars[key] = string.char(key); keyNames[key] = string.char(key) end
 for key = 65, 90 do TextManager.TextChars[key] = string.char(key + 32); keyNames[key] = string.char(key) end
 local function resolvedTextSize(size, scale)
     return math.max(1, scale and math.floor((size or Obsidian.FontSize or 14) * scale + 0.5) or math.floor(size or Obsidian.FontSize or 14))
-end
-local function getMeasureProbe(font)
-    local resolvedFont = font or Drawing.Fonts.Monospace
-    local key = tostring(resolvedFont)
-    local probe = measureProbes[key]
-    if probe then return probe end
-    probe = Drawing.new("Text")
-    assert(probe, "TextBounds probe could not be created!")
-    probe.Center = false
-    probe.Size = 14
-    probe.Font = resolvedFont
-    probe.Position = Vector2.new(-10000, -10000)
-    probe.Visible = false
-    measureProbes[key] = probe
-    return probe
 end
 function TextManager:MeasureBounds(text, size, font, scale)
     local content = tostring(text or "")
@@ -70,15 +54,7 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
     local cached = textBoundsWidths[key]
     if cached == nil then
-        local probe = getMeasureProbe(resolvedFont)
-        probe.Size = 14
-        probe.Text = content
-        local bounds = probe.TextBounds
-        if bounds and type(bounds.X) == "number" and bounds.X > 0 then
-            cached = bounds.X * (resolvedSize / 14)
-        else
-            cached = #content * 7 * (resolvedSize / 14)
-        end
+        cached = #content * (resolvedSize * 0.45)
         textBoundsWidths[key] = cached
     end
     return cached
