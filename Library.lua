@@ -50,11 +50,11 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local content = tostring(text or "")
     if content == "" then return 0 end
     local resolvedSize = resolvedTextSize(size, scale)
-    local resolvedFont = font or Drawing.Fonts.Monospace
+    local resolvedFont = font or Obsidian.Font or Drawing.Fonts.Monospace
     local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
     local cached = textBoundsWidths[key]
     if cached == nil then
-        cached = #content * (resolvedSize * 0.45)
+        cached = #content * (resolvedSize * 0.50)
         textBoundsWidths[key] = cached
     end
     return cached
@@ -102,13 +102,13 @@ function TextManager:RenderInput(window, value, placeholder, x, y, width, option
     local empty = value == nil or value == ""
     local showPlaceholder = empty and options.ShowPlaceholderWhenFocused ~= false
     local text = showPlaceholder and tostring(placeholder or "") or (empty and "" or tostring(value))
-    local size = options.Size or 13
+    local size = options.Size or Obsidian.FontSize or 14
     local fitted = self:Fit(text, width, size, nil, window:GetScale())
     local color = options.Disabled and options.DisabledColor or (showPlaceholder and options.PlaceholderColor or options.Color)
     local textWidth = self:Measure(fitted, size, nil, window:GetScale())
     local align = tostring(options.Align or options.align or "Left"):lower()
     local tx = align == "right" and x + width - textWidth or (align == "center" or align == "centre") and x + (width - textWidth) / 2 or x
-    window:_text(fitted, tx, y, color, size, Drawing.Fonts.Monospace, false, options.Outline ~= false, options.ZIndex or 1)
+    window:_text(fitted, tx, y, color, size, Obsidian.Font or Drawing.Fonts.Monospace, false, options.Outline ~= false, options.ZIndex or 1)
     if options.Focused and not options.Disabled and math.floor(tick() * 2) % 2 == 0 then
         local caretX = tx + math.min(width, empty and 2 or textWidth + 2)
         local caretH = math.floor(size * window:GetScale() + 0.5)
