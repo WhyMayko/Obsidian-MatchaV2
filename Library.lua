@@ -54,7 +54,7 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
     local cached = textBoundsWidths[key]
     if cached == nil then
-        cached = #content * (resolvedSize * 0.50)
+        cached = #content * (resolvedSize * 0.46)
         textBoundsWidths[key] = cached
     end
     return cached
