@@ -7561,13 +7561,6 @@ function Obsidian:Unload()
         _G.ObsidianActiveWindow = nil
     end
 
-    for key, probe in pairs(measureProbes) do
-        pcall(function()
-            probe.Visible = false
-            probe:Remove()
-        end)
-    end
-    table.clear(measureProbes)
 
     pcall(function()
         setrobloxinput(true)
