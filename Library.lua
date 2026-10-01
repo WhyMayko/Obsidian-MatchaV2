@@ -2528,6 +2528,9 @@ function Obsidian:CreateWindow(options)
         self.Mouse2Clicked = false
     end
     function Window:_keyPressed(key)
+        if not isrbxactive() then
+            return false
+        end
         key = keyCodeFromName(key)
         if key == nil then
             return false
@@ -2538,29 +2541,32 @@ function Obsidian:CreateWindow(options)
         return current and not previous
     end
     function Window:_updateInput()
-        local moved = mouse.X ~= self._lastMouseX or mouse.Y ~= self._lastMouseY
-        self._lastMouseX = mouse.X
-        self._lastMouseY = mouse.Y
-        local down = ismouse1pressed() == true
+        local active = isrbxactive()
+        local moved = active and (mouse.X ~= self._lastMouseX or mouse.Y ~= self._lastMouseY)
+        if active then
+            self._lastMouseX = mouse.X
+            self._lastMouseY = mouse.Y
+        end
+        local down = active and ismouse1pressed() == true
         self.Mouse1Clicked = down and not self.PrevMouse1
         self.Mouse1Held = down
         self.PrevMouse1 = down
-        local down2 = type(ismouse2pressed) == "function" and ismouse2pressed() == true or false
+        local down2 = active and type(ismouse2pressed) == "function" and ismouse2pressed() == true or false
         self.Mouse2Clicked = down2 and not self.PrevMouse2
         self.Mouse2Held = down2
         self.PrevMouse2 = down2
-        local down3 = type(ismouse3pressed) == "function" and ismouse3pressed() == true
-            or type(iskeypressed) == "function" and iskeypressed(4) == true
+        local down3 = active and (type(ismouse3pressed) == "function" and ismouse3pressed() == true
+            or type(iskeypressed) == "function" and iskeypressed(4) == true)
         self.Mouse3Clicked = down3 and not self.PrevMouse3
         self.Mouse3Held = down3
         self.PrevMouse3 = down3
-        local down4 = type(ismouse4pressed) == "function" and ismouse4pressed() == true
-            or type(iskeypressed) == "function" and iskeypressed(5) == true
+        local down4 = active and (type(ismouse4pressed) == "function" and ismouse4pressed() == true
+            or type(iskeypressed) == "function" and iskeypressed(5) == true)
         self.Mouse4Clicked = down4 and not self.PrevMouse4
         self.Mouse4Held = down4
         self.PrevMouse4 = down4
-        local down5 = type(ismouse5pressed) == "function" and ismouse5pressed() == true
-            or type(iskeypressed) == "function" and iskeypressed(6) == true
+        local down5 = active and (type(ismouse5pressed) == "function" and ismouse5pressed() == true
+            or type(iskeypressed) == "function" and iskeypressed(6) == true)
         self.Mouse5Clicked = down5 and not self.PrevMouse5
         self.Mouse5Held = down5
         self.PrevMouse5 = down5
@@ -2641,7 +2647,7 @@ function Obsidian:CreateWindow(options)
         )
     end
     function Window:_readBackspaceRepeat()
-        local down = iskeypressed(0x08) == true
+        local down = isrbxactive() and iskeypressed(0x08) == true
         if not down then
             if self.HoldKey == 0x08 then
                 self.HoldKey = nil
@@ -2979,18 +2985,20 @@ function Obsidian:CreateWindow(options)
                 and widget.listening ~= true
             then
                 local resolvedKey = keyCodeFromName(widget.value)
-                local keyHeld
-                if resolvedKey == 4 then
-                    keyHeld = type(ismouse3pressed) == "function" and ismouse3pressed() == true
-                        or type(iskeypressed) == "function" and iskeypressed(4) == true
-                elseif resolvedKey == 5 then
-                    keyHeld = type(ismouse4pressed) == "function" and ismouse4pressed() == true
-                        or type(iskeypressed) == "function" and iskeypressed(5) == true
-                elseif resolvedKey == 6 then
-                    keyHeld = type(ismouse5pressed) == "function" and ismouse5pressed() == true
-                        or type(iskeypressed) == "function" and iskeypressed(6) == true
-                else
-                    keyHeld = resolvedKey ~= nil and iskeypressed(resolvedKey) == true
+                local keyHeld = false
+                if isrbxactive() then
+                    if resolvedKey == 4 then
+                        keyHeld = type(ismouse3pressed) == "function" and ismouse3pressed() == true
+                            or type(iskeypressed) == "function" and iskeypressed(4) == true
+                    elseif resolvedKey == 5 then
+                        keyHeld = type(ismouse4pressed) == "function" and ismouse4pressed() == true
+                            or type(iskeypressed) == "function" and iskeypressed(5) == true
+                    elseif resolvedKey == 6 then
+                        keyHeld = type(ismouse5pressed) == "function" and ismouse5pressed() == true
+                            or type(iskeypressed) == "function" and iskeypressed(6) == true
+                    else
+                        keyHeld = resolvedKey ~= nil and iskeypressed(resolvedKey) == true
+                    end
                 end
                 local wasHeld = widget._prevHeld == true
                 local mode = tostring(widget.mode or "Hold")
@@ -7332,27 +7340,22 @@ function Obsidian:CreateWindow(options)
             local sleepTime = idleTime > 1.0 and 0.05 or (idleTime > 0.3 and 0.033 or 0.016)
             task.wait(sleepTime)
             if not Window.Running or Window.Destroyed then break end
-            if isrbxactive() then
-                Window:_updateInput()
-                local ok, err = pcall(function()
-                    Window:_render()
-                end)
-                if not ok then
-                    pcall(function() Window:_hideUnused() end)
-                    if Window._lastRenderError ~= err then
-                        warn("[Obsidian] Render error: " .. tostring(err))
-                        Window._lastRenderError = err
-                    end
-                else
-                    Window._lastRenderError = nil
+            Window:_updateInput()
+            local ok, err = pcall(function()
+                Window:_render()
+            end)
+            if not ok then
+                pcall(function() Window:_hideUnused() end)
+                if Window._lastRenderError ~= err then
+                    warn("[Obsidian] Render error: " .. tostring(err))
+                    Window._lastRenderError = err
                 end
-                if not Window.Running or Window.Destroyed then break end
-                Window:_handleGlobalInput()
-                Window:_updateInputBlock()
             else
-                Window:_setAllVisible(false)
-                Window:_updateInputBlock()
+                Window._lastRenderError = nil
             end
+            if not Window.Running or Window.Destroyed then break end
+            Window:_handleGlobalInput()
+            Window:_updateInputBlock()
         end
     end)
     DialogManager:SetLibrary(Obsidian)
