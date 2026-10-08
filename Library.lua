@@ -40,11 +40,31 @@ local Layers = {
 
 local TextManager = { TextChars = {} }
 local textBoundsWidths = {}
+local fitCache = {}
+local measureProbes = {}
 local keyNames = { [1] = "M1", [2] = "M2", [3] = "Cancel", [4] = "M3", [5] = "M4", [6] = "M5", [8] = "Back", [9] = "Tab", [13] = "Enter", [16] = "Shift", [17] = "Ctrl", [18] = "Alt", [27] = "Esc", [32] = "Space", [33] = "PageUp", [34] = "PageDown", [35] = "End", [36] = "Home", [37] = "Left", [38] = "Up", [39] = "Right", [40] = "Down", [45] = "Insert", [46] = "Delete" }
 for key = 48, 57 do TextManager.TextChars[key] = string.char(key); keyNames[key] = string.char(key) end
 for key = 65, 90 do TextManager.TextChars[key] = string.char(key + 32); keyNames[key] = string.char(key) end
 local function resolvedTextSize(size, scale)
     return math.max(1, scale and math.floor((size or Obsidian.FontSize or 14) * scale + 0.5) or math.floor(size or Obsidian.FontSize or 14))
+end
+local function getMeasureProbe(font)
+    local resolvedFont = font or Obsidian.Font or Drawing.Fonts.Monospace
+    local key = tostring(resolvedFont)
+    local probe = measureProbes[key]
+    if probe then return probe end
+    local ok, newProbe = pcall(function()
+        local p = Drawing.new("Text")
+        p.Visible = false
+        p.Font = resolvedFont
+        p.Text = " "
+        return p
+    end)
+    if ok and newProbe then
+        measureProbes[key] = newProbe
+        return newProbe
+    end
+    return nil
 end
 function TextManager:MeasureBounds(text, size, font, scale)
     local content = tostring(text or "")
@@ -53,10 +73,22 @@ function TextManager:MeasureBounds(text, size, font, scale)
     local resolvedFont = font or Obsidian.Font or Drawing.Fonts.Monospace
     local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
     local cached = textBoundsWidths[key]
-    if cached == nil then
-        cached = #content * (resolvedSize * 0.46)
-        textBoundsWidths[key] = cached
+    if cached ~= nil then
+        return cached
     end
+    local probe = getMeasureProbe(resolvedFont)
+    if probe then
+        probe.Size = resolvedSize
+        probe.Text = content
+        local bounds = probe.TextBounds
+        if bounds and bounds.X and bounds.X > 0 then
+            cached = bounds.X
+            textBoundsWidths[key] = cached
+            return cached
+        end
+    end
+    cached = #content * (resolvedSize * 0.46)
+    textBoundsWidths[key] = cached
     return cached
 end
 function TextManager:Measure(text, size, font, scale)
@@ -66,10 +98,23 @@ function TextManager:Fit(text, maxWidth, size, font, scale)
     text = tostring(text or "")
     if text == "" then return "" end
     if not maxWidth or maxWidth <= 0 then return "" end
-    if self:MeasureBounds(text, size, font, scale) <= maxWidth then return text end
+    local resolvedSize = resolvedTextSize(size, scale)
+    local resolvedFont = font or Obsidian.Font or Drawing.Fonts.Monospace
+    local fitKey = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. tostring(math.floor(maxWidth)) .. "\0" .. text
+    local cached = fitCache[fitKey]
+    if cached ~= nil then
+        return cached
+    end
+    if self:MeasureBounds(text, size, font, scale) <= maxWidth then
+        fitCache[fitKey] = text
+        return text
+    end
     local suffix = "..."
     local suffixW = self:MeasureBounds(suffix, size, font, scale)
-    if suffixW >= maxWidth then return "" end
+    if suffixW >= maxWidth then
+        fitCache[fitKey] = ""
+        return ""
+    end
     local low, high = 1, #text
     local best = suffix
     while low <= high do
@@ -82,6 +127,7 @@ function TextManager:Fit(text, maxWidth, size, font, scale)
             high = middle - 1
         end
     end
+    fitCache[fitKey] = best
     return best
 end
 function TextManager:KeyName(key)
@@ -231,7 +277,7 @@ function AnimationManager:Approach(owner, key, target, speed)
 		if math.abs(nextVal - target) < 0.001 then
 			nextVal = target
 		end
-	elseif kind == "color" then
+	elseif kind == "Color3" then
 		if math.abs(nextVal.R - target.R) < 0.003 and math.abs(nextVal.G - target.G) < 0.003 and math.abs(nextVal.B - target.B) < 0.003 then
 			nextVal = target
 		end
@@ -1552,11 +1598,18 @@ local function isImageData(data)
     return false
 end
 
+local wrapCache = {}
 local function wrapTextLines(text, maxWidth, size, maxLines, font)
     text = tostring(text or "")
-    local lines = {}
+    if text == "" then return { "" } end
     maxLines = maxLines or 8
-
+    local scale = Obsidian.ActiveWindow and Obsidian.ActiveWindow:GetScale() or 1.0
+    local wrapKey = tostring(font or "") .. "\0" .. tostring(size or 14) .. "\0" .. tostring(scale) .. "\0" .. tostring(math.floor(maxWidth)) .. "\0" .. tostring(maxLines) .. "\0" .. text
+    local cached = wrapCache[wrapKey]
+    if cached ~= nil then
+        return cached
+    end
+    local lines = {}
     local function push(line)
         if #lines >= maxLines then
             return nil
@@ -1597,6 +1650,7 @@ local function wrapTextLines(text, maxWidth, size, maxLines, font)
     if #lines == 0 then
         lines[1] = ""
     end
+    wrapCache[wrapKey] = lines
     return lines
 end
 local function widestLineWidth(lines, size, font)
@@ -2294,13 +2348,8 @@ function Obsidian:CreateWindow(options)
         if self.BlockClicks then return false end
         local modal = self:_topDialog()
         if modal and modal ~= owner then return false end
-        if not modal then
-            for _, notification in ipairs(self.Notifications or {}) do
-                local hitbox = notification.hitbox
-                if owner ~= notification and hitbox and self:_over(hitbox.x, hitbox.y, hitbox.w, hitbox.h) then
-                    return false
-                end
-            end
+        if not modal and self._mouseOverNotification and (not owner or owner._isNotification ~= true) then
+            return false
         end
         return not self.InputFocus or self.InputFocus == owner
     end
@@ -2465,7 +2514,13 @@ function Obsidian:CreateWindow(options)
         name = tostring(name or ""):lower()
         size = size or 14
         name = IconAliases[name] or name
-        local data = IconData[name] or (_G.Obsidian and _G.Obsidian.Assets and (_G.Obsidian.Assets[name] or _G.Obsidian.Assets["assets/icons/lucide/" .. name .. ".png"]))
+        local data = IconData[name]
+        if not data then
+            data = _G.Obsidian and _G.Obsidian.Assets and (_G.Obsidian.Assets[name] or _G.Obsidian.Assets["assets/icons/lucide/" .. name .. ".png"])
+            if data then
+                IconData[name] = data
+            end
+        end
         if not data and name:match("^[%w%-]+$") then
             local url = Obsidian.LucideIconUrl .. name .. ".png"
             local cached = Obsidian.ImageCache[url]
@@ -4776,7 +4831,11 @@ function Obsidian:CreateWindow(options)
             return nil
         end
         if not self.ColorPickerDrag then
-            widget.hue, widget.sat, widget.vib = rgbToHsv(widget.value or Color3.new(1, 1, 1))
+            local curColor = widget.value or Color3.new(1, 1, 1)
+            if widget._lastSyncColor ~= curColor then
+                widget.hue, widget.sat, widget.vib = rgbToHsv(curColor)
+                widget._lastSyncColor = curColor
+            end
         end
         local scale = self:GetScale()
         local info = widget.popup
@@ -5644,6 +5703,17 @@ function Obsidian:CreateWindow(options)
         self.TooltipText = nil
         local modal = self:_topDialog()
         self.ModalOwner = modal
+        local mouseOverNotif = false
+        if not modal and self.Notifications then
+            for _, notif in ipairs(self.Notifications) do
+                local hb = notif.hitbox
+                if hb and self:_over(hb.x, hb.y, hb.w, hb.h) then
+                    mouseOverNotif = true
+                    break
+                end
+            end
+        end
+        self._mouseOverNotification = mouseOverNotif
         if modal then
             self.InputFocus = modal
         elseif self.InputFocus and self.InputFocus.closed then
