@@ -2880,10 +2880,6 @@ function Obsidian:CreateWindow(options)
         end
     end
 
-    function Window:SetCornerRadius(radius)
-        self._cornerRadius = math.min(10, math.max(0, math.floor(radius or 0)))
-        Obsidian.CornerRadius = self._cornerRadius
-    end
     function Window:_setOpen(state)
         self.Open = state == true
         self:_clearInteraction()
