@@ -2,6 +2,9 @@ local Loader = {}
 
 Loader.Repo = "https://raw.githubusercontent.com/WhyMayko/Obsidian-MatchaV2/refs/heads/main/"
 Loader.CoreModules = {}
+
+_G.Obsidian = _G.Obsidian or {}
+
 local function loadModule(path)
     local loaded = _G.Obsidian[path]
     if type(loaded) == "table" then
