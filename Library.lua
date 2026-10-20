@@ -48,32 +48,35 @@ for key = 65, 90 do TextManager.TextChars[key] = string.char(key + 32); keyNames
 local function resolvedTextSize(size, scale)
     return math.max(1, scale and math.floor((size or Obsidian.FontSize or 14) * scale + 0.5) or math.floor(size or Obsidian.FontSize or 14))
 end
-local function getMeasureProbe()
-    local probe = measureProbes["fixed"]
+local function getMeasureProbe(font)
+    local resolvedFont = font or Obsidian.Font or Drawing.Fonts.Monospace
+    local key = tostring(resolvedFont)
+    local probe = measureProbes[key]
     if probe then return probe end
     local ok, newProbe = pcall(function()
         local p = Drawing.new("Text")
         p.Visible = false
-        p.Font = Drawing.Fonts.Monospace
+        p.Font = resolvedFont
         p.Text = " "
         return p
     end)
     if ok and newProbe then
-        measureProbes["fixed"] = newProbe
+        measureProbes[key] = newProbe
         return newProbe
     end
     return nil
 end
-function TextManager:MeasureBounds(text, size, _, scale)
+function TextManager:MeasureBounds(text, size, font, scale)
     local content = tostring(text or "")
     if content == "" then return 0 end
     local resolvedSize = resolvedTextSize(size, scale)
-    local key = tostring(resolvedSize) .. "\0" .. content
+    local resolvedFont = font or Obsidian.Font or Drawing.Fonts.Monospace
+    local key = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. content
     local cached = textBoundsWidths[key]
     if cached ~= nil then
         return cached
     end
-    local probe = getMeasureProbe()
+    local probe = getMeasureProbe(resolvedFont)
     if probe then
         probe.Size = resolvedSize
         probe.Text = content
@@ -91,22 +94,23 @@ end
 function TextManager:Measure(text, size, font, scale)
     return self:MeasureBounds(text, size, font, scale)
 end
-function TextManager:Fit(text, maxWidth, size, _, scale)
+function TextManager:Fit(text, maxWidth, size, font, scale)
     text = tostring(text or "")
     if text == "" then return "" end
     if not maxWidth or maxWidth <= 0 then return "" end
     local resolvedSize = resolvedTextSize(size, scale)
-    local fitKey = tostring(resolvedSize) .. "\0" .. tostring(math.floor(maxWidth)) .. "\0" .. text
+    local resolvedFont = font or Obsidian.Font or Drawing.Fonts.Monospace
+    local fitKey = tostring(resolvedFont) .. "\0" .. tostring(resolvedSize) .. "\0" .. tostring(math.floor(maxWidth)) .. "\0" .. text
     local cached = fitCache[fitKey]
     if cached ~= nil then
         return cached
     end
-    if self:MeasureBounds(text, size, nil, scale) <= maxWidth then
+    if self:MeasureBounds(text, size, font, scale) <= maxWidth then
         fitCache[fitKey] = text
         return text
     end
     local suffix = "..."
-    local suffixW = self:MeasureBounds(suffix, size, nil, scale)
+    local suffixW = self:MeasureBounds(suffix, size, font, scale)
     if suffixW >= maxWidth then
         fitCache[fitKey] = ""
         return ""
@@ -116,7 +120,7 @@ function TextManager:Fit(text, maxWidth, size, _, scale)
     while low <= high do
         local middle = math.floor((low + high) / 2)
         local candidate = text:sub(1, middle) .. suffix
-        if self:MeasureBounds(candidate, size, nil, scale) <= maxWidth then
+        if self:MeasureBounds(candidate, size, font, scale) <= maxWidth then
             best = candidate
             low = middle + 1
         else
@@ -887,16 +891,7 @@ local function formatNumber(value, decimals)
     if decimals <= 0 then
         return tostring(math.floor(value + 0.5))
     end
-    local str = tostring(value)
-    local dot = string.find(str, "%.")
-    if not dot then
-        return str .. "." .. string.rep("0", decimals)
-    end
-    local decLen = #str - dot
-    if decLen < decimals then
-        return str .. string.rep("0", decimals - decLen)
-    end
-    return str
+    return tostring(value)
 end
 local function _scaled(x, s) return math.floor(x * s + 0.5) end
 local function _yOfs(s) return s > 1 and -math.floor((s - 1) * 3) or 0 end
@@ -1330,13 +1325,13 @@ local function makeHandle(widget)
     return handle
 end
 
-local function estimateTextWidth(text, size)
+local function estimateTextWidth(text, size, font)
     local scale = Obsidian.ActiveWindow and Obsidian.ActiveWindow:GetScale() or 1.0
-    return TextManager:Measure(text, size or 14, Drawing.Fonts.Monospace, scale)
+    return TextManager:Measure(text, size or Obsidian.FontSize or 14, font or (Theme and Theme.Font) or Drawing.Fonts.Monospace, scale)
 end
-local function fitTextToWidth(text, maxWidth, size)
+local function fitTextToWidth(text, maxWidth, size, font)
     local scale = Obsidian.ActiveWindow and Obsidian.ActiveWindow:GetScale() or 1.0
-    return TextManager:Fit(text, maxWidth, size or 14, Drawing.Fonts.Monospace, scale)
+    return TextManager:Fit(text, maxWidth, size or Obsidian.FontSize or 14, font or (Theme and Theme.Font) or Drawing.Fonts.Monospace, scale)
 end
 
 function Obsidian:SetWatermark(text)
@@ -2161,14 +2156,15 @@ function Obsidian:CreateWindow(options)
         local object = self:_get("Text")
         if not object then return nil end
         local meta = drawingMeta[object]
+        local resolvedFont = Obsidian.Font
         local nativeCenter = center == "native"
         setDrawingValue(object, meta, "Center", nativeCenter)
         setDrawingValue(object, meta, "Text", content)
         setDrawingValue(object, meta, "Size", textSize)
-        setDrawingValue(object, meta, "Font", Drawing.Fonts.Monospace)
+        setDrawingValue(object, meta, "Font", resolvedFont)
         local textX = x
         if center == true then
-            textX = x - TextManager:MeasureBounds(content, size or 14, nil, scale) / 2
+            textX = x - TextManager:MeasureBounds(content, size or Obsidian.FontSize or 14, resolvedFont, scale) / 2
         end
         local yOffset = scale > 1 and -math.floor((scale - 1) * 3) or 0
         setDrawingPosition(object, meta, math.floor(textX + 0.5), math.floor(y + yOffset + 0.5))
@@ -3565,16 +3561,19 @@ function Obsidian:CreateWindow(options)
         local prefix = tostring(widget.prefix or "")
         local suffix = tostring(widget.suffix or "")
         local currentDisplay = prefix .. currentText .. suffix
+        local maxDisplay = prefix .. maxText .. suffix
         local valueText
         if widget.formatDisplayValue and maxText == "" then
             valueText = currentText
         elseif compact then
             valueText = tostring(widget.label or "Slider") .. ": " .. currentDisplay
-        else
+        elseif widget.hideMax then
             valueText = currentDisplay
+        else
+            valueText = currentDisplay .. "/" .. maxDisplay
         end
         local scale = self:GetScale()
-        local valueW = estimateTextWidth(valueText, 14)
+        local valueW = estimateTextWidth(valueText, 14, Drawing.Fonts.Monospace)
         local scaledValTextSize = math.floor(14 * scale + 0.5)
         local sliderValueText = self:_anim(widget, "slider.value.text", disabled and Theme.DimText or Theme.Text, 16)
         if not compact then
@@ -3583,12 +3582,11 @@ function Obsidian:CreateWindow(options)
                 self:_anim(widget, "slider.label.text", disabled and Theme.DimText or Theme.Text, 16)
             local maxValW = math.max(0, w - math.floor(10 * scale))
             if valueW > maxValW then
-                valueText = fitTextToWidth(valueText, maxValW, 14)
-                valueW = estimateTextWidth(valueText, 14)
+                valueText = fitTextToWidth(valueText, maxValW, 14, Drawing.Fonts.Monospace)
+                valueW = estimateTextWidth(valueText, 14, Drawing.Fonts.Monospace)
             end
-            local valX = math.max(x, x + w - valueW - math.floor(2 * scale))
-            local labelMaxW = math.max(0, valX - x - math.floor(8 * scale))
-            local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14)
+            local labelMaxW = math.max(0, w - valueW - math.floor(10 * scale))
+            local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14, Drawing.Fonts.Monospace)
             self:_text(
                 fittedLabel,
                 x,
@@ -3602,7 +3600,7 @@ function Obsidian:CreateWindow(options)
             )
             self:_text(
                 valueText,
-                valX,
+                x + w - valueW,
                 y + math.floor(2 * scale),
                 sliderValueText,
                 14,
@@ -3641,8 +3639,8 @@ function Obsidian:CreateWindow(options)
             sliderInput.hitbox = { x = barX, y = barY, w = barW, h = barH }
             self:_renderTextInputValue(sliderInput.value, "", barX + math.floor(6 * scale), barY + math.floor((barH - scaledValTextSize) / 2), barW - math.floor(12 * scale), 14, true, false, z + 4, true, "center")
         elseif compact then
-            local displayCompact = fitTextToWidth(valueText, barW - math.floor(10 * scale), 14)
-            local compW = estimateTextWidth(displayCompact, 14)
+            local displayCompact = fitTextToWidth(valueText, barW - math.floor(10 * scale), 14, Drawing.Fonts.Monospace)
+            local compW = estimateTextWidth(displayCompact, 14, Drawing.Fonts.Monospace)
             local compX = math.max(barX + math.floor(4 * scale), barX + math.floor((barW - compW) / 2))
             self:_text(displayCompact, compX, barY + math.floor((barH - scaledValTextSize) / 2), sliderValueText, 14, Drawing.Fonts.Monospace, false, true, z + 4)
         end
