@@ -887,7 +887,16 @@ local function formatNumber(value, decimals)
     if decimals <= 0 then
         return tostring(math.floor(value + 0.5))
     end
-    return tostring(value)
+    local str = tostring(value)
+    local dot = string.find(str, "%.")
+    if not dot then
+        return str .. "." .. string.rep("0", decimals)
+    end
+    local decLen = #str - dot
+    if decLen < decimals then
+        return str .. string.rep("0", decimals - decLen)
+    end
+    return str
 end
 local function _scaled(x, s) return math.floor(x * s + 0.5) end
 local function _yOfs(s) return s > 1 and -math.floor((s - 1) * 3) or 0 end
@@ -3577,7 +3586,7 @@ function Obsidian:CreateWindow(options)
                 valueText = fitTextToWidth(valueText, maxValW, 14)
                 valueW = estimateTextWidth(valueText, 14)
             end
-            local valX = math.max(x, x + w - valueW)
+            local valX = math.max(x, x + w - valueW - math.floor(2 * scale))
             local labelMaxW = math.max(0, valX - x - math.floor(8 * scale))
             local fittedLabel = fitTextToWidth(widget.label, labelMaxW, 14)
             self:_text(
